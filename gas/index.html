@@ -38,12 +38,8 @@
     <p class="description-text">
       挑戦したいジャンルを選んでください
     </p>
-    <button class="btn" onclick="selectGenre('ジャンル1')">ジャンル1</button>
-    <button class="btn" onclick="selectGenre('ジャンル2')">ジャンル2</button>
-    <button class="btn" onclick="selectGenre('ジャンル3')">ジャンル3</button>
-    <button class="btn" onclick="selectGenre('ジャンル4')">ジャンル4</button>
-    <button class="btn" onclick="selectGenre('ジャンル5')">ジャンル5</button>
-    <button class="btn" onclick="selectGenre('ジャンル6')">ジャンル6</button>
+    <!-- ジャンルボタンはconfig.jsのGENRE_NAMESから動的に生成 -->
+    <div id="genreButtons"></div>
   </div>
 
   <!-- 問題画面 -->
@@ -115,6 +111,9 @@
 </div>
 
 <!-- 外部JavaScriptファイル読み込み（GitHub Pages） -->
+<!-- ホスティング設定を最初に読み込み -->
+<script src="https://nomynoma.github.io/gas-kentei-quiz/config.js"></script>
+<!-- メインスクリプトを読み込み -->
 <script src="https://nomynoma.github.io/gas-kentei-quiz/script.js"></script>
 </body>
 </html>

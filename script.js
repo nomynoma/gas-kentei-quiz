@@ -3,20 +3,10 @@
 // ========================================
 
 // ========================================
-// 設定：画像ベースURL（カスタマイズ可能）
+// 設定はconfig.jsで一元管理
 // ========================================
-// デフォルト: GitHub Pagesの絶対URL（GASでも動作）
-const IMAGE_BASE_URL = 'https://nomynoma.github.io/gas-kentei-quiz/imgs/';
-// フォーク時やローカル開発時は下記に変更
-// const IMAGE_BASE_URL = './imgs/';
-
-// ========================================
-// 設定：合格証ページベースURL（カスタマイズ可能）
-// ========================================
-// デフォルト: GitHub Pagesの絶対URL（GASでも動作）
-const CERTIFICATE_BASE_URL = 'https://nomynoma.github.io/gas-kentei-quiz/certificate/';
-// フォーク時やローカル開発時は下記に変更
-// const CERTIFICATE_BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/certificate/';
+// すべてのURL設定は config.js で定義されています
+// このファイルより前に config.js が読み込まれている必要があります
 
 let nickname = '';
 let levels = ['初級','中級','上級'];
@@ -27,6 +17,52 @@ let currentQuestion = 0;
 let score = 0;
 let answered = false;
 let selectedChoices = [];
+
+// 初期化：画像URLとジャンルボタンを動的に設定
+function initializeApp() {
+  // Faviconの設定
+  const faviconLink = document.querySelector('link[rel="icon"]');
+  if (faviconLink && IMAGE_URLS && IMAGE_URLS.favicon) {
+    faviconLink.href = IMAGE_URLS.favicon;
+  }
+
+  // OGP画像の設定
+  const ogpImageMeta = document.querySelector('meta[property="og:image"]');
+  if (ogpImageMeta && IMAGE_URLS && IMAGE_URLS.ogpImage) {
+    ogpImageMeta.content = IMAGE_URLS.ogpImage;
+  }
+
+  // Twitter Card画像の設定
+  const twitterImageMeta = document.querySelector('meta[name="twitter:image"]');
+  if (twitterImageMeta && IMAGE_URLS && IMAGE_URLS.ogpImage) {
+    twitterImageMeta.content = IMAGE_URLS.ogpImage;
+  }
+
+  // ジャンルボタンを動的に生成
+  initializeGenreButtons();
+}
+
+// ジャンルボタンを動的に生成
+function initializeGenreButtons() {
+  const genreButtonsDiv = document.getElementById('genreButtons');
+  if (!genreButtonsDiv || !GENRE_NAMES) return;
+
+  genreButtonsDiv.innerHTML = '';
+  GENRE_NAMES.forEach(genreName => {
+    const button = document.createElement('button');
+    button.className = 'btn';
+    button.textContent = genreName;
+    button.onclick = function() { selectGenre(genreName); };
+    genreButtonsDiv.appendChild(button);
+  });
+}
+
+// ページ読み込み時に初期化を実行
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
+}
 
 // 画面切替
 function showScreen(id){
@@ -227,12 +263,20 @@ function showCertificate(){
   const today = new Date();
   const dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
 
-  // ジャンル番号を取得（ジャンル1 → 1）
-  const genreNumber = currentGenre.replace('ジャンル', '');
+  // ジャンル番号を取得（config.jsのGENRE_NAMESから）
+  const genreNumber = getGenreNumber(currentGenre);
   const levelNumber = currentLevelIndex + 1; // 0:初級→1, 1:中級→2, 2:上級→3
 
-  // 背景画像URLを設定（IMAGE_BASE_URLを使用）
-  const imageUrl = IMAGE_BASE_URL + 'frame_hyousyoujyou_' + genreNumber + '-' + levelNumber + '.jpg';
+  // 背景画像URLをマッピングから取得
+  const mapKey = genreNumber + '-' + levelNumber;
+  const imageUrl = CERTIFICATE_BG_IMAGE_MAP[mapKey];
+
+  // マッピングに存在しない場合のフォールバック（念のため）
+  if (!imageUrl) {
+    console.error('合格証明書の背景画像が見つかりません: ' + mapKey);
+    alert('合格証明書の背景画像が見つかりません。管理者に連絡してください。');
+    return;
+  }
 
   // テキスト内容を準備（CSSクラスで位置・スタイルを指定）
   const levelText = currentLevelIndex === 2 ? '上級全問正解' : levelName + '合格';

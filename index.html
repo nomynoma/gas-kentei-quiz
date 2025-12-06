@@ -18,6 +18,10 @@
 <meta name="twitter:title" content="クイズアプリ - 6ジャンル・3段階">
 <meta name="twitter:description" content="初級・中級・上級の3段階で挑戦！全問正解で合格証明書がもらえるよ！">
 <meta name="twitter:image" content="https://nomynoma.github.io/gas-kentei-quiz/imgs/ogp-image.png">
+
+<!-- 設定ファイル読み込み -->
+<script src="config.js"></script>
+
 <style>
 html, body {
   margin: 0;
@@ -38,6 +42,10 @@ iframe {
 </style>
 </head>
 <body>
-<iframe src="https://script.google.com/macros/s/AKfycbwfhEmEVxN6cJfpBvC-ox4LStgfQxEkyZfvHEZtsHISzZj2Aa1MoMeMzlQNmCnko7ya/exec"></iframe>
+<iframe id="gasIframe" src=""></iframe>
+<script>
+  // config.jsで定義されたGAS_DEPLOYMENT_URLを使用
+  document.getElementById('gasIframe').src = GAS_DEPLOYMENT_URL;
+</script>
 </body>
 </html>

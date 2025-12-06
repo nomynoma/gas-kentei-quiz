@@ -1,6 +1,22 @@
 // ========================================
 // 合格証関連ページ - 統合スクリプト
 // ========================================
+// すべてのURL設定は config.js で定義されています
+
+// 初期化：画像URLを動的に設定
+function initializeImageUrls() {
+  const faviconLink = document.querySelector('link[rel="icon"]');
+  if (faviconLink && IMAGE_URLS && IMAGE_URLS.faviconCertificate) {
+    faviconLink.href = IMAGE_URLS.faviconCertificate;
+  }
+}
+
+// ページ読み込み時に初期化を実行
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeImageUrls);
+} else {
+  initializeImageUrls();
+}
 
 // ========================================
 // エントリーポイントページ用
@@ -9,8 +25,8 @@
 if (typeof google === 'undefined') {
   // GitHub Pagesでの実行（google.script.runが無い場合）
 
-  // GASのデプロイURLを設定
-  const GAS_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwfhEmEVxN6cJfpBvC-ox4LStgfQxEkyZfvHEZtsHISzZj2Aa1MoMeMzlQNmCnko7ya/exec';
+  // GASのデプロイURLを設定（config.jsから取得）
+  const GAS_URL = GAS_DEPLOYMENT_URL;
 
   // URLパラメータからUUIDを取得
   const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +46,7 @@ if (typeof google === 'undefined') {
   } else {
     // iframeでGASのURLを埋め込み表示
     const iframe = document.createElement('iframe');
-    iframe.src = GAS_DEPLOYMENT_URL + '?goukaku=' + encodeURIComponent(uuid);
+    iframe.src = GAS_URL + '?goukaku=' + encodeURIComponent(uuid);
     iframe.title = '合格証';
 
     // エラー時の処理
