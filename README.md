@@ -1,10 +1,6 @@
 # これなに
 スプシからクイズだすやつ
 
-# クイズアプリ
-
-Google Apps Script と Google スプレッドシートを使用した6ジャンル・3段階クイズアプリケーションです。
-
 ## デモサイト
 
 https://nomynoma.github.io/gas-kentei-quiz/
