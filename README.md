@@ -68,5 +68,5 @@ https://docs.google.com/spreadsheets/d/1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXD
 
 ## ライセンス
 
-このプロジェクトは個人利用・学習目的で作成されています。
+このプロジェクトは個人の趣味の範囲で作成されています。
 とくにライセンスはないです。
