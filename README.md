@@ -7,7 +7,7 @@ Google Apps Script と Google スプレッドシートを使用した6ジャン�
 
 ## デモサイト
 
-https://nomynoma.github.io/storage/quizsample/
+https://nomynoma.github.io/gas-kentei-quiz/
 
 ## 問題集のスプシ
 https://docs.google.com/spreadsheets/d/1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8/edit?usp=sharing

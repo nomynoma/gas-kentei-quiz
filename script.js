@@ -6,7 +6,7 @@
 // 設定：画像ベースURL（カスタマイズ可能）
 // ========================================
 // デフォルト: GitHub Pagesの絶対URL（GASでも動作）
-const IMAGE_BASE_URL = 'https://nomynoma.github.io/storage/quizsample/imgs/';
+const IMAGE_BASE_URL = 'https://nomynoma.github.io/gas-kentei-quiz/imgs/';
 // フォーク時やローカル開発時は下記に変更
 // const IMAGE_BASE_URL = './imgs/';
 
@@ -14,7 +14,7 @@ const IMAGE_BASE_URL = 'https://nomynoma.github.io/storage/quizsample/imgs/';
 // 設定：合格証ページベースURL（カスタマイズ可能）
 // ========================================
 // デフォルト: GitHub Pagesの絶対URL（GASでも動作）
-const CERTIFICATE_BASE_URL = 'https://nomynoma.github.io/storage/quizsample/certificate/';
+const CERTIFICATE_BASE_URL = 'https://nomynoma.github.io/gas-kentei-quiz/certificate/';
 // フォーク時やローカル開発時は下記に変更
 // const CERTIFICATE_BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/certificate/';
 
