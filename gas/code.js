@@ -1,0 +1,420 @@
+function doGet(e) {
+  // goukakuパラメータがある場合は合格証画像表示画面を返す
+  if (e.parameter && e.parameter.goukaku) {
+    var template = HtmlService.createTemplateFromFile('certificate_view');
+    template.uuid = e.parameter.goukaku;
+    return template.evaluate()
+      .setTitle('合格証')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  // 通常のクイズ画面
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('クイズアプリ')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * セクションごとの問題を取得（キャッシュ対応版）
+ * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
+ * @param {string} level - "初級", "中級", "上級"
+ * @returns {Array} ランダム10問
+ */
+function getQuestions(genreName, level) {
+  try {
+    var startTime = new Date().getTime();
+    Logger.log('開始: genreName=' + genreName + ', level=' + level);
+
+    // スプレッドシート取得（デフォルト: このスクリプトが紐付いているスプレッドシート）
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    // カスタム: 別のスプレッドシートを使う場合は下記のコメントを外してIDを指定
+    // var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
+    // var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+    // キャッシュから取得を試みる（6時間有効）
+    var cache = CacheService.getScriptCache();
+    var cacheKey = 'sheet_' + genreName;
+    var cachedData = cache.get(cacheKey);
+
+    var data;
+    if (cachedData) {
+      Logger.log('キャッシュヒット: ' + genreName);
+      data = JSON.parse(cachedData);
+      var cacheTime = new Date().getTime();
+      Logger.log('キャッシュ読み込み完了: ' + (cacheTime - startTime) + 'ms');
+    } else {
+      Logger.log('キャッシュミス: スプレッドシートから読み込み');
+      var sheet = ss.getSheetByName(genreName);
+      var sheetTime = new Date().getTime();
+      Logger.log('シート取得完了: ' + (sheetTime - startTime) + 'ms');
+      if (!sheet) throw new Error(genreName + 'シートが見つかりません');
+
+      data = sheet.getDataRange().getValues();
+      var dataTime = new Date().getTime();
+      Logger.log('データ読み込み完了: ' + (dataTime - sheetTime) + 'ms (全' + data.length + '行)');
+
+      // キャッシュに保存（6時間 = 21600秒）
+      try {
+        cache.put(cacheKey, JSON.stringify(data), 21600);
+        Logger.log('キャッシュに保存完了');
+      } catch (e) {
+        Logger.log('キャッシュ保存エラー（サイズ超過の可能性）: ' + e);
+      }
+    }
+
+    var dataTime = new Date().getTime();
+
+    // 該当レベルの行インデックスのみを収集（軽量）
+    var matchingRowIndices = [];
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][1] === level && data[i][4]) {
+        matchingRowIndices.push(i);
+      }
+    }
+
+    // 問題数チェック
+    if (matchingRowIndices.length < 10) {
+      throw new Error(genreName + 'の' + level + 'は問題が10問未満です（現在' + matchingRowIndices.length + '問）');
+    }
+
+    // Fisher-Yatesシャッフルでインデックスをランダム化
+    for (var i = matchingRowIndices.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = matchingRowIndices[i];
+      matchingRowIndices[i] = matchingRowIndices[j];
+      matchingRowIndices[j] = temp;
+    }
+
+    // 最初の10問だけを処理
+    var selectedQuestions = [];
+    for (var i = 0; i < 10; i++) {
+      var rowIndex = matchingRowIndices[i];
+      var row = data[rowIndex];
+
+      var selectionType = (row[2] || 'single').toString().trim().toLowerCase();
+      var answerValue = (row[9] || '').toString().trim();
+
+      var q = {
+        number: row[0] || rowIndex,
+        level: row[1] || '',
+        selectionType: selectionType,
+        displayType: (row[3] || 'text').toString().trim().toLowerCase(),
+        question: row[4] || '',
+        choiceA: row[5] || '',
+        choiceB: row[6] || '',
+        choiceC: row[7] || '',
+        choiceD: row[8] || '',
+        answer: selectionType === 'input' ? answerValue : answerValue.toUpperCase()
+      };
+
+      // 入力問題の場合は選択肢シャッフルをスキップ
+      if (q.selectionType === 'input') {
+        selectedQuestions.push(q);
+        continue;
+      }
+
+      // 選択問題の場合は選択肢をシャッフル
+      var choices = [
+        { label: 'A', text: q.choiceA },
+        { label: 'B', text: q.choiceB },
+        { label: 'C', text: q.choiceC },
+        { label: 'D', text: q.choiceD }
+      ];
+
+      var originalCorrectLabels = q.answer.split(',').map(function(a) { return a.trim().toUpperCase(); });
+
+      // 選択肢をシャッフル
+      for (var k = choices.length - 1; k > 0; k--) {
+        var l = Math.floor(Math.random() * (k + 1));
+        var tmp = choices[k];
+        choices[k] = choices[l];
+        choices[l] = tmp;
+      }
+
+      // シャッフル後の正解ラベルを更新
+      var newAnswer = [];
+      for (var idx = 0; idx < choices.length; idx++) {
+        var originalLabel = ['A','B','C','D'][idx];
+        if (originalCorrectLabels.indexOf(choices[idx].label) !== -1) {
+          newAnswer.push(originalLabel);
+        }
+      }
+
+      // 選択肢テキストを更新
+      q.choiceA = choices[0].text;
+      q.choiceB = choices[1].text;
+      q.choiceC = choices[2].text;
+      q.choiceD = choices[3].text;
+      q.answer = newAnswer.join(',');
+
+      selectedQuestions.push(q);
+    }
+
+    var endTime = new Date().getTime();
+    Logger.log('問題処理完了: ' + (endTime - dataTime) + 'ms');
+    Logger.log('合計処理時間: ' + (endTime - startTime) + 'ms');
+
+    return selectedQuestions;
+
+  } catch (error) {
+    Logger.log('エラー: ' + error.toString());
+    throw new Error('問題の読み込みに失敗しました: ' + error.toString());
+  }
+}
+
+/**
+ * 合格証データをスプレッドシートに保存
+ * @param {Object} data - {uuid, genre, level, nickname, date, imageData}
+ */
+function saveCertificateData(data) {
+  try {
+    var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+    // 「合格者一覧」シートを取得または作成
+    var sheet = ss.getSheetByName('合格者一覧');
+    if (!sheet) {
+      sheet = ss.insertSheet('合格者一覧');
+      // ヘッダー行を追加
+      sheet.appendRow(['UUID', 'ジャンル', 'クリアレベル', 'ニックネーム', '年月日', '画像RAWデータ']);
+      sheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#eeeeee');
+    }
+
+    // サーバー側でUUIDを生成（ニックネーム + タイムスタンプのSHA256ハッシュ）
+    var timestamp = new Date().getTime();
+    var hashSource = data.nickname + timestamp;
+    var uuid = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, hashSource)
+      .map(function(byte) {
+        var v = (byte < 0) ? 256 + byte : byte;
+        return ('0' + v.toString(16)).slice(-2);
+      })
+      .join('');
+
+    // データを追加
+    sheet.appendRow([
+      uuid,
+      data.genre,
+      data.level,
+      data.nickname,
+      data.date,
+      data.imageData
+    ]);
+
+    Logger.log('合格証データを保存しました: UUID=' + uuid);
+    return { success: true, uuid: uuid };
+
+  } catch (error) {
+    Logger.log('合格証データ保存エラー: ' + error.toString());
+    throw new Error('合格証データの保存に失敗しました: ' + error.toString());
+  }
+}
+
+/**
+ * UUIDで合格証画像データを取得
+ * @param {string} uuid
+ * @returns {Object} 合格証データ
+ */
+function getCertificateByUUID(uuid) {
+  try {
+    var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName('合格者一覧');
+
+    if (!sheet) {
+      throw new Error('合格者一覧シートが見つかりません');
+    }
+
+    var data = sheet.getDataRange().getValues();
+    Logger.log('検索UUID: [' + uuid + '] 文字数: ' + uuid.length);
+    Logger.log('データ行数: ' + data.length);
+
+    // UUIDで検索（ヘッダー行をスキップして2行目から）
+    for (var i = 1; i < data.length; i++) {
+      var cellUuid = data[i][0].toString().trim();
+      Logger.log('行' + i + ' UUID: [' + cellUuid + '] 文字数: ' + cellUuid.length);
+      Logger.log('比較: [' + cellUuid + '] === [' + uuid + '] = ' + (cellUuid === uuid));
+
+      // 文字列として比較（トリムして比較）
+      if (cellUuid === uuid.toString().trim()) {
+        Logger.log('一致しました！行番号: ' + i);
+
+        try {
+          Logger.log('返却データ - UUID: ' + data[i][0]);
+        } catch (e) {
+          Logger.log('UUID取得エラー: ' + e);
+        }
+
+        try {
+          Logger.log('返却データ - genre: ' + data[i][1]);
+        } catch (e) {
+          Logger.log('genre取得エラー: ' + e);
+        }
+
+        try {
+          Logger.log('返却データ - level: ' + data[i][2]);
+        } catch (e) {
+          Logger.log('level取得エラー: ' + e);
+        }
+
+        try {
+          Logger.log('返却データ - nickname: ' + data[i][3]);
+        } catch (e) {
+          Logger.log('nickname取得エラー: ' + e);
+        }
+
+        try {
+          Logger.log('返却データ - date: ' + data[i][4]);
+        } catch (e) {
+          Logger.log('date取得エラー: ' + e);
+        }
+
+        try {
+          var imageDataLength = data[i][5] ? data[i][5].length : 0;
+          Logger.log('返却データ - imageData 文字数: ' + imageDataLength);
+          if (imageDataLength > 0) {
+            Logger.log('返却データ - imageData 先頭50文字: ' + data[i][5].substring(0, 50));
+          }
+        } catch (e) {
+          Logger.log('imageData取得エラー: ' + e);
+        }
+
+        try {
+          // DateオブジェクトをJSON送信可能な形式に変換
+          var dateValue = data[i][4];
+          var dateString = '';
+          if (dateValue instanceof Date) {
+            // Dateオブジェクトの場合は文字列に変換
+            dateString = dateValue.toString();
+          } else {
+            // それ以外の場合はそのまま文字列化
+            dateString = dateValue ? dateValue.toString() : '';
+          }
+
+          var result = {
+            uuid: data[i][0].toString(),
+            genre: data[i][1].toString(),
+            level: data[i][2].toString(),
+            nickname: data[i][3].toString(),
+            date: dateString,
+            imageData: data[i][5].toString()
+          };
+
+          Logger.log('返却オブジェクト作成完了');
+          Logger.log('resultオブジェクト: ' + JSON.stringify({
+            uuid: result.uuid,
+            genre: result.genre,
+            level: result.level,
+            nickname: result.nickname,
+            date: result.date,
+            imageDataLength: result.imageData ? result.imageData.length : 0
+          }));
+
+          return result;
+        } catch (e) {
+          Logger.log('オブジェクト作成エラー: ' + e);
+          throw e;
+        }
+      }
+    }
+
+    Logger.log('すべての行を検索しましたが一致しませんでした');
+    throw new Error('指定されたUUIDの合格証が見つかりません。UUID=' + uuid);
+
+  } catch (error) {
+    Logger.log('合格証取得エラー: ' + error.toString());
+    throw new Error('合格証の取得に失敗しました: ' + error.toString());
+  }
+}
+
+/**
+ * WebアプリのデプロイURLを取得
+ * @returns {string} デプロイURL
+ */
+function getDeploymentUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+/**
+ * キャッシュをリロード（問題を更新した時に実行）
+ * スプレッドシートのボタンから実行可能
+ * 全ジャンルのキャッシュをクリアして即座に再読み込み
+ */
+function reloadQuestionCache() {
+  var startTime = new Date().getTime();
+  var cache = CacheService.getScriptCache();
+  var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+
+  // スプレッドシート取得（デフォルト: このスクリプトが紐付いているスプレッドシート）
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  // カスタム: 別のスプレッドシートを使う場合は下記のコメントを外してIDを指定
+  // var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
+  // var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  // 進捗通知
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'キャッシュをリロード中...',
+    'キャッシュリロード',
+    3
+  );
+
+  // 各ジャンルのキャッシュをクリア＆再読み込み
+  for (var i = 0; i < genres.length; i++) {
+    var genreName = genres[i];
+    var key = 'sheet_' + genreName;
+
+    // キャッシュクリア
+    cache.remove(key);
+    Logger.log('キャッシュクリア: ' + genreName);
+
+    // スプレッドシートから再読み込み
+    try {
+      var sheet = ss.getSheetByName(genreName);
+      if (sheet) {
+        var data = sheet.getDataRange().getValues();
+        cache.put(key, JSON.stringify(data), 21600); // 6時間
+        Logger.log('キャッシュ再読み込み完了: ' + genreName + ' (' + data.length + '行)');
+      }
+    } catch (e) {
+      Logger.log('キャッシュ再読み込みエラー (' + genreName + '): ' + e);
+    }
+  }
+
+  var endTime = new Date().getTime();
+  var totalTime = ((endTime - startTime) / 1000).toFixed(2);
+
+  Logger.log('全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）');
+
+  // 完了通知
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）\n次回アクセスは高速になります。',
+    'キャッシュリロード完了',
+    5
+  );
+
+  return '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）';
+}
+
+/**
+ * キャッシュをクリアのみ（リロードなし）
+ * 軽量版：クリアだけして次回アクセス時に自動読み込み
+ */
+function clearQuestionCache() {
+  var cache = CacheService.getScriptCache();
+  var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+
+  for (var i = 0; i < genres.length; i++) {
+    var key = 'sheet_' + genres[i];
+    cache.remove(key);
+    Logger.log('キャッシュクリア: ' + genres[i]);
+  }
+
+  Logger.log('全ジャンルのキャッシュをクリアしました');
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '全ジャンルのキャッシュをクリアしました。次回アクセス時に最新データが読み込まれます。',
+    'キャッシュクリア完了',
+    5
+  );
+
+  return '全ジャンルのキャッシュをクリアしました';
+}

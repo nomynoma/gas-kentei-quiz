@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>クイズアプリ</title>
+<link rel="icon" href="https://nomynoma.github.io/storage/quizsample/imgs/favicon.svg" type="image/svg+xml">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- 外部CSSファイル読み込み（GitHub Pages） -->
+<link rel="stylesheet" href="https://nomynoma.github.io/storage/quizsample/style.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- ニックネーム入力画面 -->
+  <div id="nicknameScreen" class="screen active">
+    <div id="nicknameForm">
+      <h1>📝 ニックネーム入力</h1>
+      <p class="description-text">
+        合格証明書に表示するニックネームを入力してください
+      </p>
+      <input type="text" id="nicknameInput" maxlength="10" placeholder="ニックネームを入力" class="text-input">
+      <div id="nicknameError" class="error-text"></div>
+      <button class="btn" onclick="submitNickname()">次へ</button>
+    </div>
+    <div id="preparingMessage" class="hidden">
+      <h1>⏳ 問題作成中...</h1>
+      <p class="description-text-top">
+        しばらくお待ちください
+      </p>
+    </div>
+  </div>
+
+  <!-- ジャンル選択画面 -->
+  <div id="genreScreen" class="screen">
+    <h1>📚 ジャンル選択</h1>
+    <p class="description-text">
+      挑戦したいジャンルを選んでください
+    </p>
+    <button class="btn" onclick="selectGenre('ジャンル1')">ジャンル1</button>
+    <button class="btn" onclick="selectGenre('ジャンル2')">ジャンル2</button>
+    <button class="btn" onclick="selectGenre('ジャンル3')">ジャンル3</button>
+    <button class="btn" onclick="selectGenre('ジャンル4')">ジャンル4</button>
+    <button class="btn" onclick="selectGenre('ジャンル5')">ジャンル5</button>
+    <button class="btn" onclick="selectGenre('ジャンル6')">ジャンル6</button>
+  </div>
+
+  <!-- 問題画面 -->
+  <div id="questionScreen" class="screen">
+    <div class="question-number" id="questionNumber"></div>
+    <div id="multipleInstruction" class="multiple-instruction hidden">
+      🔴 複数選択問題：正解と思うものをすべて選んでから「解答する」ボタンを押してください
+    </div>
+    <div class="question-text" id="questionText"></div>
+    <div id="choices"></div>
+    <div id="feedback"></div>
+  </div>
+
+  <!-- 不合格画面 -->
+  <div id="failScreen" class="screen">
+    <h1>😢 不合格</h1>
+    <div class="score-text" id="failResultText"></div>
+    <p class="description-text-vertical">10問全問正解で次のレベルへ進めます</p>
+    <button class="btn btn-twitter" onclick="shareFailToX()">𝕏 で共有する</button>
+    <button class="btn" onclick="retryLevel()">もう一度挑戦する</button>
+    <button class="btn btn-gray" onclick="restartQuiz()">最初から解く</button>
+  </div>
+
+  <!-- 合格証明書画面 -->
+  <div id="certificateScreen" class="screen">
+    <!-- 合格証明書エリア（生成した画像を表示） -->
+    <div id="certificateArea" class="certificate-area">
+      <img id="certificateDisplayImage" src="" alt="合格証明書" class="certificate-display-image">
+    </div>
+    <!-- ボタンエリア -->
+    <div class="button-area">
+      <button class="btn btn-twitter" onclick="shareToX()">𝕏 で共有する</button>
+      <button class="btn" id="certificateNextBtn" onclick="nextSection()">次のレベルへ</button>
+      <button class="btn" id="certificateRestartBtn" onclick="restartQuiz()">最初からときなおす</button>
+      <!-- 合格証URL -->
+      <div id="certificateUrlArea" class="certificate-url-area">
+        <p id="certificateUrlLabel" class="certificate-url-label">⏳ 合格証URL準備中…</p>
+        <a id="certificateUrl" href="#" target="_blank" class="certificate-url-link"></a>
+        <button class="btn btn-green hidden" id="certificateUrlCopyBtn" onclick="copyCertificateUrl()">URLをコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ローディング画面 -->
+  <div id="loading" class="screen">
+    <div class="loading">問題を読み込んでいます...</div>
+  </div>
+
+</div>
+
+<!-- ========================================
+     キャプチャ用固定サイズ合格証エリア
+     ========================================
+     デバッグモード: 下記の1行目のコメントアウトを外すと画面に表示されます
+     本番モード: 下記の2行目のコメントアウトを外すと画面外に配置されます
+     ======================================== -->
+<!-- デバッグモード: コメントアウトを外して有効化
+<div id="captureArea" class="capture-area-debug">
+  <div class="debug-label">DEBUG: キャプチャ元DOM (800x565)</div>
+-->
+<!-- 本番モード: デバッグモードをコメントアウトして、こちらのコメントアウトを外す -->
+<div id="captureArea" class="capture-area-production">
+  <div class="result-background capture-background">
+    <img id="captureImage" src="" alt="合格証明書" class="result-bg-image capture-image">
+    <div class="result-overlay">
+      <div id="captureText" class="certificate-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 外部JavaScriptファイル読み込み（GitHub Pages） -->
+<script src="https://nomynoma.github.io/storage/quizsample/script.js"></script>
+</body>
+</html>

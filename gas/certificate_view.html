@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合格証</title>
+<link rel="icon" href="https://nomynoma.github.io/storage/quizsample/imgs/favicon_certificate.svg" type="image/svg+xml">
+<!-- 外部CSSファイル読み込み（GitHub Pages） -->
+<link rel="stylesheet" href="https://nomynoma.github.io/storage/quizsample/certificate/style.css">
+</head>
+<body class="view-page">
+<div class="container">
+  <h1>🏆 合格証</h1>
+  <div id="debugInfo" style="background:#fff3cd; padding:10px; margin-bottom:20px; border-radius:8px; font-size:12px; display:none;">
+    <strong>デバッグ情報:</strong><br>
+    UUID: <span id="debugUuid"></span>
+  </div>
+  <div id="content">
+    <div class="loading">読み込み中...</div>
+  </div>
+</div>
+
+<script>
+// UUIDを取得（Apps Script テンプレート構文）
+var uuid = '<?!= uuid ?>';
+</script>
+<!-- 外部JavaScriptファイル読み込み（GitHub Pages） -->
+<script src="https://nomynoma.github.io/storage/quizsample/certificate/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+/* ========================================
+   クイズアプリ - スタイルシート
+   ======================================== */
+
+/* 基本スタイル */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f0f2f5;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.container {
+  background: white;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 26px;
+}
+
+/* 画面切り替え */
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+/* ボタン */
+.btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: block;
+  margin: 20px auto;
+  min-width: 200px;
+  box-sizing: border-box;
+}
+
+.btn:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+}
+
+/* ボタンバリエーション */
+.btn-twitter {
+  background: #1DA1F2;
+}
+
+.btn-twitter:hover {
+  background: #0d8bd9;
+}
+
+.btn-gray {
+  background: #999;
+}
+
+.btn-gray:hover {
+  background: #808080;
+}
+
+.btn-green {
+  background: #28a745;
+  padding: 10px 20px;
+  font-size: 14px;
+  min-width: auto;
+}
+
+.btn-green:hover {
+  background: #218838;
+}
+
+.submit-btn {
+  background: #28a745;
+  margin-top: 20px;
+}
+
+.submit-btn:hover {
+  background: #218838;
+}
+
+/* 選択肢ボタン */
+.choice-btn {
+  width: 100%;
+  margin: 10px 0;
+  text-align: left;
+  background: #f8f9fa;
+  color: #333;
+  padding: 15px 20px;
+  position: relative;
+  border-radius: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.choice-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.choice-btn.selected {
+  background: #d4e7ff;
+  border: 2px solid #667eea;
+}
+
+.choice-btn.image-choice {
+  padding: 10px;
+  text-align: center;
+  height: auto;
+}
+
+.choice-btn.image-choice img {
+  width: 100%;
+  max-width: 400px;
+  height: 250px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* 画像選択肢のラベル */
+.image-choice-label {
+  margin-top: 8px;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* 問題表示 */
+.question-number {
+  color: #667eea;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.question-text {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.question-text img {
+  max-height: 100px !important;
+  width: auto !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 複数選択問題の注意書き */
+.multiple-instruction {
+  background: #ffe6e6;
+  border: 2px solid #ff6b6b;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  color: #c92a2a;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 結果表示 */
+.result {
+  font-size: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.result.correct {
+  background: #d4edda;
+  color: #155724;
+  border: 2px solid #c3e6cb;
+}
+
+.result.incorrect {
+  background: #f8d7da;
+  color: #721c24;
+  border: 2px solid #f5c6cb;
+}
+
+/* スコア表示 */
+.score {
+  font-size: 48px;
+  color: #667eea;
+  text-align: center;
+  margin: 30px 0;
+  font-weight: bold;
+}
+
+.score-text {
+  font-size: 24px;
+  color: #666;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* ローディング */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+  color: #666;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 50px;
+}
+
+.loading-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 20px;
+}
+
+.loading-message {
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 合格証エリア */
+.certificate-area {
+  margin-bottom: 30px;
+}
+
+.button-area {
+  text-align: center;
+}
+
+/* ========================================
+   合格証スタイル設定（カスタマイズ可能）
+   ======================================== */
+/* キャプチャエリアのサイズ（背景画像サイズに合わせる） */
+#captureArea .result-background {
+  width: 800px !important;
+  max-width: 800px !important;
+  height: 565px !important;
+}
+
+/* ニックネーム＋殿のスタイル */
+.certificate-nickname {
+  position: absolute;
+  top: 43%;
+  right: 12%;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: right;
+  transform: translateY(-50%);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 日付のスタイル */
+.certificate-date {
+  position: absolute;
+  bottom: 12%;
+  right: 11%;
+  font-size: 16px;
+  text-align: right;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* 表示用の合格証エリア */
+.result-background {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.result-bg-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 15px;
+}
+
+.result-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.certificate-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  text-shadow: 2px 2px 4px rgba(255,255,255,0.9), -2px -2px 4px rgba(255,255,255,0.9), 2px -2px 4px rgba(255,255,255,0.9), -2px 2px 4px rgba(255,255,255,0.9);
+  letter-spacing: 8px;
+  line-height: 1.8;
+}
+
+/* 共通スタイル */
+.description-text {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.description-text-top {
+  font-size: 18px;
+  color: #666;
+  margin-top: 30px;
+}
+
+.description-text-vertical {
+  font-size: 18px;
+  color: #666;
+  margin: 20px 0;
+}
+
+.text-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 18px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 14px;
+  margin-bottom: 15px;
+  min-height: 20px;
+  display: none;
+}
+
+.hidden {
+  display: none;
+}
+
+/* 合格証表示エリア */
+.certificate-display-image {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* 合格証URLエリア */
+.certificate-url-area {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: none;
+}
+
+.certificate-url-label {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 10px 0;
+}
+
+.certificate-url-link {
+  font-size: 12px;
+  color: #667eea;
+  word-break: break-all;
+  display: none;
+  margin-bottom: 10px;
+}
+
+/* 入力問題の入力フィールド */
+.answer-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 18px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* デバッグラベル */
+.debug-label {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  background: red;
+  color: white;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* キャプチャエリアのスタイル（デバッグ・本番で使い分け） */
+.capture-area-debug {
+  position: relative;
+  margin: 20px auto;
+  width: 800px;
+  height: 565px;
+  border: 3px solid red;
+}
+
+.capture-area-production {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 800px;
+  height: 565px;
+}
+
+.capture-background {
+  width: 800px;
+  height: 565px;
+  position: relative;
+  margin: 0;
+}
+
+.capture-image {
+  border-radius: 0;
+}
+
+/* レスポンシブデザイン */
+@media (min-width: 600px) {
+  .container {
+    max-width: 600px;
+    padding: 50px;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+    min-height: auto;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .question-text {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    font-size: 16px;
+    min-width: 100%;
+  }
+
+  .score {
+    font-size: 36px;
+  }
+
+  .score-text {
+    font-size: 18px;
+  }
+
+  .result {
+    font-size: 16px;
+    padding: 15px;
+  }
+
+  .image-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .choice-btn.image-choice img {
+    height: auto;
+    max-height: 300px;
+  }
+
+  .choice-btn.image-choice {
+    padding: 5px;
+  }
+
+  .certificate-text {
+    font-size: 24px;
+    letter-spacing: 6px;
+  }
+}

@@ -1,0 +1,20 @@
+# GASプロジェクト設定（個人の設定ファイル）
+gas/.clasp.json
+gas/.claspignore
+
+# Node.js
+node_modules/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
