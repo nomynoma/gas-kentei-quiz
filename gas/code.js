@@ -297,36 +297,50 @@ function reloadQuestionCache() {
   var cache = CacheService.getScriptCache();
   var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
 
-  // スプレッドシート取得（デフォルト: このスクリプトが紐付いているスプレッドシート）
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  // カスタム: 別のスプレッドシートを使う場合は下記のコメントを外してIDを指定
-  // var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
-  // var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-  // 進捗通知
   SpreadsheetApp.getActiveSpreadsheet().toast(
     'キャッシュをリロード中...',
     'キャッシュリロード',
     3
   );
 
-  // 各ジャンルのキャッシュをクリア＆再読み込み
   for (var i = 0; i < genres.length; i++) {
     var genreName = genres[i];
-    var key = 'sheet_' + genreName;
+    var sheet = ss.getSheetByName(genreName);
+    if (!sheet) continue;
 
-    // キャッシュクリア
-    cache.remove(key);
-    Logger.log('キャッシュクリア: ' + genreName);
-
-    // スプレッドシートから再読み込み
     try {
-      var sheet = ss.getSheetByName(genreName);
-      if (sheet) {
-        var data = sheet.getDataRange().getValues();
-        cache.put(key, JSON.stringify(data), 21600); // 6時間
-        Logger.log('キャッシュ再読み込み完了: ' + genreName + ' (' + data.length + '行)');
+      var data = sheet.getDataRange().getValues();
+
+      // ① 問題データ（出題用）
+      cache.put(
+        'sheet_' + genreName,
+        JSON.stringify(data),
+        21600
+      );
+
+      // ② 答えMAP（判定用）
+      var answerMap = {};
+      for (var r = 1; r < data.length; r++) {
+        var id = data[r][0];
+        var ans = data[r][9];
+        if (id && ans !== '') {
+          answerMap[id] = ans.toString().trim().toUpperCase();
+        }
       }
+
+      cache.put(
+        'answerMap_' + genreName,
+        JSON.stringify(answerMap),
+        21600
+      );
+
+      Logger.log('キャッシュ再構築: ' + genreName +
+        ' / 行数=' + data.length +
+        ' / 答え数=' + Object.keys(answerMap).length
+      );
+
     } catch (e) {
       Logger.log('キャッシュ再読み込みエラー (' + genreName + '): ' + e);
     }
@@ -335,16 +349,13 @@ function reloadQuestionCache() {
   var endTime = new Date().getTime();
   var totalTime = ((endTime - startTime) / 1000).toFixed(2);
 
-  Logger.log('全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）');
-
-  // 完了通知
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）\n次回アクセスは高速になります。',
+    '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）',
     'キャッシュリロード完了',
     5
   );
 
-  return '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）';
+  return 'キャッシュリロード完了（' + totalTime + '秒）';
 }
 
 /**
@@ -391,56 +402,42 @@ function clearQuestionCache() {
  * @return {Object} 判定結果
  * @return {boolean} return.correct true:正解 / false:不正解
  */
-function judgeAnswer(payload){
-  var questionId = payload.questionId;
-  var userAnswer = payload.answer;
+function judgeAnswer(payload) {
+  var cache = CacheService.getScriptCache();
 
-  // アクティブなスプレッドシートを取得
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets();
-
-  // 全シートを走査
-  for (var s = 0; s < sheets.length; s++) {
-    var sheet = sheets[s];
-    var data = sheet.getDataRange().getValues();
-
-    // 1行目はヘッダーなので 2行目以降を対象
-    for (var i = 1; i < data.length; i++) {
-
-      // 問題IDが一致する行を探す
-      if (data[i][0] === questionId) {
-
-        // 正解データ（大文字・前後空白除去）
-        var correctAnswer = data[i][9]
-          .toString()
-          .trim()
-          .toUpperCase();
-
-        // ===== 複数選択問題 =====
-        if (Array.isArray(userAnswer)) {
-          var correct = correctAnswer
-            .split(',')
-            .map(a => a.trim());
-
-          var isCorrect =
-            userAnswer.length === correct.length &&
-            userAnswer.every(a => correct.includes(a));
-
-          return { correct: isCorrect };
-        }
-
-        // ===== 単一選択 / 入力式問題 =====
-        return {
-          correct:
-            userAnswer
-              .toString()
-              .trim()
-              .toUpperCase() === correctAnswer
-        };
-      }
-    }
+  if (!payload || !payload.questionId || !payload.genre) {
+    return { correct: false };
   }
 
-  // 該当する問題IDが見つからなかった場合
-  return { correct: false };
+  var mapStr = cache.get('answerMap_' + payload.genre);
+  if (!mapStr) {
+    return { correct: false, error: 'answerMap not found' };
+  }
+
+  var answerMap = JSON.parse(mapStr);
+  var correctAnswer = answerMap[payload.questionId];
+
+  if (!correctAnswer) {
+    return { correct: false };
+  }
+
+  var userAnswer = payload.answer;
+
+  // ===== 複数選択 =====
+  if (Array.isArray(userAnswer)) {
+    var correctArr = correctAnswer.split(',').map(a => a.trim());
+    var isCorrect =
+      userAnswer.length === correctArr.length &&
+      userAnswer.every(a => correctArr.includes(a));
+    return { correct: isCorrect };
+  }
+
+  // ===== 単一選択 / 入力 =====
+  return {
+    correct:
+      userAnswer
+        .toString()
+        .trim()
+        .toUpperCase() === correctAnswer
+  };
 }

@@ -226,7 +226,8 @@ function submitMultipleAnswer(){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: selectedChoices
+      answer: selectedChoices,
+      genre: currentGenre
     });
 
   const submitBtn = document.getElementById('submitBtn');
@@ -256,7 +257,8 @@ function checkAnswer(label){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: label
+      answer: label,
+      genre: currentGenre
     });
 }
 
@@ -290,7 +292,8 @@ function submitInputAnswer(){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: input
+      answer: input,
+      genre: currentGenre
     });
 
   const submitBtn = document.getElementById('submitBtn');
