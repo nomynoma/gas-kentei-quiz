@@ -227,12 +227,12 @@ h1 {
 }
 
 .progress-dot {
-  width: 28px;
-  height: 28px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   display: inline-block;
   border: 2px solid #667eea;
-  background: white;
+  background: #999;
   transition: all 0.3s ease;
   cursor: pointer;
   flex-shrink: 0;
@@ -248,11 +248,11 @@ h1 {
 }
 
 .progress-dot.unanswered {
-  background: white;
+  background: #999;
 }
 
 .progress-dot.current {
-  border-width: 3px;
+  border-width: 2px;
   border-color: #ff6b6b;
   transform: scale(1.2);
 }
@@ -656,29 +656,5 @@ h1 {
   .certificate-text {
     font-size: 24px;
     letter-spacing: 6px;
-  }
-
-  .progress-dot {
-    width: 24px;
-    height: 24px;
-    float: left;  /* 追加 */
-  }
-
-  .progress-dots {
-    gap: 6px;
-    max-width: 100%;
-    justify-content: flex-start;  /* 追加 */
-  }
-
-  /* モバイルで5個ずつ折り返し */
-  .progress-dot:nth-child(5n + 1) {
-    clear: left;  /* 変更: margin-left: 0; から変更 */
-  }
-  
-  /* floatをクリアするため */
-  .progress-dots::after {  /* 追加 */
-    content: "";
-    display: table;
-    clear: both;
   }
 }
