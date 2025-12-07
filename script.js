@@ -165,7 +165,7 @@ function showQuestion(){
     choicesDiv.innerHTML = html;
   } else {
     // 選択問題の場合（既存のコード）
-    const choiceMap = { A: q.choiceA, B: q.choiceB, C: q.choiceC, D: q.choiceD };
+    const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
     let html = '<div class="image-grid">';
     Object.keys(choiceMap).forEach(label => {
       const onclick = isMultiple ? "toggleChoice('" + label + "')" : "checkAnswer('" + label + "')";
@@ -173,7 +173,13 @@ function showQuestion(){
       const content = isImage
         ? '<img src="' + choiceMap[label] + '" alt="選択肢' + label + '" onerror="this.src=\'https://via.placeholder.com/400x250?text=画像読込エラー\'"><div class="image-choice-label">' + label + '</div>'
         : label + ': ' + choiceMap[label];
-      html += '<button class="' + buttonClass + '" onclick="' + onclick + '">' + content + '</button>';
+      html +=
+        '<button class="' + buttonClass + '" ' +
+        'data-label="' + label + '" ' +
+        'onclick="' + onclick + '">' +
+        content +
+        '</button>';
+
     });
     html += '</div>';
     if(isMultiple) html += '<button id="submitBtn" class="btn submit-btn" onclick="submitMultipleAnswer()">解答する</button>';
@@ -183,19 +189,31 @@ function showQuestion(){
   showScreen('questionScreen');
 }
 
-// 複数選択
+// 複数選択（順序を安定させる）
 function toggleChoice(choice){
-  if(answered) return;
+  if (answered) return;
+
   const idx = selectedChoices.indexOf(choice);
-  if(idx>-1) selectedChoices.splice(idx,1); else selectedChoices.push(choice);
+
+  if (idx > -1) {
+    // すでに選択されていたら外す
+    selectedChoices.splice(idx, 1);
+  } else {
+    // 選択されていなければ追加
+    selectedChoices.push(choice);
+  }
+
+  // ★順序を常に A,B,C,D の順に揃える
+  const ORDER = ['A', 'B', 'C', 'D'];
+  selectedChoices.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+
   updateChoiceButtons();
 }
 
 function updateChoiceButtons(){
-  const buttons = document.querySelectorAll('.choice-btn:not(.submit-btn)');
-  const labels = ['A','B','C','D'];
-  buttons.forEach((btn,i)=>{
-    btn.classList.toggle('selected', selectedChoices.includes(labels[i]));
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    const label = btn.dataset.label;
+    btn.classList.toggle('selected', selectedChoices.includes(label));
   });
 }
 
@@ -224,6 +242,7 @@ function submitMultipleAnswer(){
           '<button class="btn" onclick="nextQuestion()">次へ</button>';
       }
     })
+    .withFailureHandler(() => { answered = false; })
     .judgeAnswer({
       questionId: q.id,
       answer: selectedChoices,
@@ -339,7 +358,6 @@ function showCertificate(){
   }
 
   // テキスト内容を準備（CSSクラスで位置・スタイルを指定）
-  const levelText = currentLevelIndex === 2 ? '上級全問正解' : levelName + '合格';
   const certificateTextHtml =
     '<div class="certificate-nickname">' + nickname + '殿</div>' +
     '<div class="certificate-date">' + dateStr + '</div>';
@@ -390,7 +408,7 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
 
   html2canvas(captureArea, {
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: '#ffffff',
     scale: 2,
     width: 800,

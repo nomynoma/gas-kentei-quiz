@@ -20,99 +20,32 @@ function doGet(e) {
  * @param {string} level - "初級", "中級", "上級"
  * @returns {Array} ランダム10問
  */
-function getQuestions(genreName, level) {
-  try {
-    var startTime = new Date().getTime();
-    Logger.log('開始: genreName=' + genreName + ', level=' + level);
+function getQuestions(genre, level) {
+  var cache = CacheService.getScriptCache();
+  var cacheKey = 'q_' + genre + '_' + level;
 
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-    var cache = CacheService.getScriptCache();
-    var cacheKey = 'sheet_' + genreName;
-    var cachedData = cache.get(cacheKey);
-
-    var data;
-    if (cachedData) {
-      Logger.log('キャッシュヒット: ' + genreName);
-      data = JSON.parse(cachedData);
-    } else {
-      Logger.log('キャッシュミス: スプレッドシートから読み込み');
-      var sheet = ss.getSheetByName(genreName);
-      if (!sheet) throw new Error(genreName + 'シートが見つかりません');
-
-      data = sheet.getDataRange().getValues();
-      try {
-        cache.put(cacheKey, JSON.stringify(data), 21600);
-      } catch (e) {
-        Logger.log('キャッシュ保存エラー: ' + e);
-      }
-    }
-
-    // 該当レベルの行インデックスを収集
-    var matchingRowIndices = [];
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][1] === level && data[i][4]) {
-        matchingRowIndices.push(i);
-      }
-    }
-
-    if (matchingRowIndices.length < 10) {
-      throw new Error(genreName + 'の' + level + 'は問題が10問未満です');
-    }
-
-    // インデックスをシャッフル
-    for (var i = matchingRowIndices.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tmp = matchingRowIndices[i];
-      matchingRowIndices[i] = matchingRowIndices[j];
-      matchingRowIndices[j] = tmp;
-    }
-
-    var selectedQuestions = [];
-    for (var i = 0; i < 10; i++) {
-      var row = data[matchingRowIndices[i]];
-
-      var selectionType = (row[2] || 'single').toString().trim().toLowerCase();
-
-      var q = {
-        id: row[0],
-        level: row[1] || '',
-        selectionType: selectionType,
-        displayType: (row[3] || 'text').toString().trim().toLowerCase(),
-        question: row[4] || '',
-        choiceA: row[5] || '',
-        choiceB: row[6] || '',
-        choiceC: row[7] || '',
-        choiceD: row[8] || ''
-      };
-
-      // 入力問題以外は選択肢をシャッフル（正解情報なし）
-      if (q.selectionType !== 'input') {
-        var choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD];
-
-        for (var k = choices.length - 1; k > 0; k--) {
-          var l = Math.floor(Math.random() * (k + 1));
-          var tmp = choices[k];
-          choices[k] = choices[l];
-          choices[l] = tmp;
-        }
-
-        q.choiceA = choices[0];
-        q.choiceB = choices[1];
-        q.choiceC = choices[2];
-        q.choiceD = choices[3];
-      }
-
-      selectedQuestions.push(q);
-    }
-
-    Logger.log('問題取得完了（10問）');
-    return selectedQuestions;
-
-  } catch (error) {
-    Logger.log('エラー: ' + error.toString());
-    throw new Error('問題の読み込みに失敗しました: ' + error.toString());
+  var cached = cache.get(cacheKey);
+  if (!cached) {
+    throw new Error('question cache not found: ' + cacheKey);
   }
+
+  var questions = JSON.parse(cached);
+
+  // シャッフル（Fisher–Yates）
+  for (var i = questions.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = questions[i];
+    questions[i] = questions[j];
+    questions[j] = tmp;
+  }
+
+  // 必要数に制限（例：10問）
+  var LIMIT = 10;
+  if (questions.length > LIMIT) {
+    questions = questions.slice(0, LIMIT);
+  }
+
+  return questions;
 }
 
 /**
@@ -290,12 +223,14 @@ function getDeploymentUrl() {
 /**
  * キャッシュをリロード（問題を更新した時に実行）
  * スプレッドシートのボタンから実行可能
- * 全ジャンルのキャッシュをクリアして即座に再読み込み
+ * 全ジャンル・レベルのキャッシュをクリアして即座に再読み込み
  */
 function reloadQuestionCache() {
   var startTime = new Date().getTime();
   var cache = CacheService.getScriptCache();
+
   var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+  var levels = ['初級', '中級', '上級'];
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -305,61 +240,69 @@ function reloadQuestionCache() {
     3
   );
 
-  for (var i = 0; i < genres.length; i++) {
-    var genreName = genres[i];
+  for (var g = 0; g < genres.length; g++) {
+    var genreName = genres[g];
     var sheet = ss.getSheetByName(genreName);
     if (!sheet) continue;
 
-    try {
-      var data = sheet.getDataRange().getValues();
+    var data = sheet.getDataRange().getValues();
 
-      // ① 問題データ（出題用）
-      cache.put(
-        'sheet_' + genreName,
-        JSON.stringify(data),
-        21600
-      );
+    for (var l = 0; l < levels.length; l++) {
+      var level = levels[l];
 
-      // ② 答えMAP（判定用）
+      var questions = [];
       var answerMap = {};
+
       for (var r = 1; r < data.length; r++) {
+        if (data[r][1] !== level) continue;
+
+        // ---- 出題用（正解なし） ----
+        questions.push({
+          id: data[r][0],
+          level: data[r][1],
+          selectionType: (data[r][2] || 'single').toLowerCase(),
+          displayType: (data[r][3] || 'text').toLowerCase(),
+          question: data[r][4],
+          choiceA: data[r][5],
+          choiceB: data[r][6],
+          choiceC: data[r][7],
+          choiceD: data[r][8]
+        });
+
+        // ---- 判定用 ----
         var id = data[r][0];
         var ans = data[r][9];
-        if (id && ans !== '') {
-          var selectionType = data[r][2];
+        if (!id || ans === '') continue;
+
+        var selectionType = data[r][2];
+        if (selectionType !== 'input') {
           var correctLabels = ans.toString().trim().toUpperCase().split(',');
+          var labelToText = {
+            A: data[r][5],
+            B: data[r][6],
+            C: data[r][7],
+            D: data[r][8]
+          };
 
-          if (selectionType !== 'input') {
-            var labelToText = {
-              A: data[r][5],
-              B: data[r][6],
-              C: data[r][7],
-              D: data[r][8]
-            };
-
-            answerMap[id] = correctLabels.map(function(l) {
-              return labelToText[l];
-            });
-          } else {
-            // 入力問題はそのまま
-            answerMap[id] = ans.toString().trim().toUpperCase();
-          }
+          answerMap[id] = correctLabels
+            .map(function(c) { return labelToText[c]; })
+            .filter(Boolean);
+        } else {
+          answerMap[id] = ans.toString().trim().toUpperCase();
         }
       }
 
       cache.put(
-        'answerMap_' + genreName,
-        JSON.stringify(answerMap),
+        'q_' + genreName + '_' + level,
+        JSON.stringify(questions),
         21600
       );
 
-      Logger.log('キャッシュ再構築: ' + genreName +
-        ' / 行数=' + data.length +
-        ' / 答え数=' + Object.keys(answerMap).length
+      cache.put(
+        'a_' + genreName + '_' + level,
+        JSON.stringify(answerMap),
+        21600
       );
-
-    } catch (e) {
-      Logger.log('キャッシュ再読み込みエラー (' + genreName + '): ' + e);
     }
   }
 
@@ -367,7 +310,7 @@ function reloadQuestionCache() {
   var totalTime = ((endTime - startTime) / 1000).toFixed(2);
 
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    '全ジャンルのキャッシュをリロードしました（' + totalTime + '秒）',
+    'キャッシュを再構築しました（' + totalTime + '秒）',
     'キャッシュリロード完了',
     5
   );
@@ -381,45 +324,36 @@ function reloadQuestionCache() {
  */
 function clearQuestionCache() {
   var cache = CacheService.getScriptCache();
-  var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+  var genres = ['ジャンル1','ジャンル2','ジャンル3','ジャンル4','ジャンル5','ジャンル6'];
+  var levels = ['初級','中級','上級'];
 
-  for (var i = 0; i < genres.length; i++) {
-    var key = 'sheet_' + genres[i];
-    cache.remove(key);
-    Logger.log('キャッシュクリア: ' + genres[i]);
+  for (var g = 0; g < genres.length; g++) {
+    for (var l = 0; l < levels.length; l++) {
+      cache.remove('q_' + genres[g] + '_' + levels[l]);
+      cache.remove('a_' + genres[g] + '_' + levels[l]);
+    }
   }
 
-  Logger.log('全ジャンルのキャッシュをクリアしました');
-
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    '全ジャンルのキャッシュをクリアしました。次回アクセス時に最新データが読み込まれます。',
+    '全ジャンル・レベルのキャッシュをクリアしました',
     'キャッシュクリア完了',
     5
   );
-
-  return '全ジャンルのキャッシュをクリアしました';
 }
 
 /**
- * ユーザーの回答が正解かどうかを判定する
+ * 回答を判定する
  *
- * クライアント（script.js）から送信された
- * questionId と回答内容をもとに、
- * スプレッドシート上の正解データと照合する。
- *
- * ・単一選択問題
- * ・複数選択問題
- * ・入力式問題
- *
- * すべてこの関数で共通判定する。
- *
- * @param {Object} payload 判定に必要な情報
- * @param {string|number} payload.questionId 問題ID（1列目）
+ * @param {Object} payload
+ * @param {string} payload.genre
+ * @param {string} payload.level
+ * @param {string|number} payload.questionId
  * @param {string|string[]} payload.answer ユーザーの回答
  * @return {Object} 判定結果
- * @return {boolean} return.correct true:正解 / false:不正解
+ *   { correct: boolean }
  */
 function judgeAnswer(payload) {
+  var cache = CacheService.getScriptCache();
 
   function normalize(v) {
     return v
@@ -428,53 +362,34 @@ function judgeAnswer(payload) {
       .toUpperCase();
   }
 
-  var cache = CacheService.getScriptCache();
+  // ✅ レベル別 正解キャッシュ
+  var cacheKey = 'a_' + payload.genre + '_' + payload.level;
+  var answerMap = JSON.parse(cache.get(cacheKey) || '{}');
 
-  if (!payload || !payload.questionId || !payload.genre) {
-    return { correct: false };
-  }
-
-  var mapStr = cache.get('answerMap_' + payload.genre);
-  if (!mapStr) {
-    return { correct: false, error: 'answerMap not found' };
-  }
-
-  var answerMap = JSON.parse(mapStr);
   var correctAnswer = answerMap[payload.questionId];
-
-  if (!correctAnswer) {
-    return { correct: false };
+  if (correctAnswer === undefined) {
+    throw new Error('正解データが見つかりません');
   }
 
   var userAnswer = payload.answer;
 
-  // ===== 複数選択 =====
+  var isCorrect;
   if (Array.isArray(userAnswer)) {
-    var correctTexts = correctAnswer; // ["大阪","名古屋"]
-
-    var userSet = userAnswer.map(normalize).sort();
-    var correctSet = correctTexts.map(normalize).sort();
-
-    var isCorrect =
-      userSet.length === correctSet.length &&
-      userSet.every((v, i) => v === correctSet[i]);
-
-    return { correct: isCorrect };
+    // 複数選択
+    if (!Array.isArray(correctAnswer)) {
+      isCorrect = false;
+    } else {
+      var ua = userAnswer.map(normalize).sort().join(',');
+      var ca = correctAnswer.map(normalize).sort().join(',');
+      isCorrect = ua === ca;
+    }
+  } else {
+    // 単一回答
+    isCorrect =
+      normalize(userAnswer) === normalize(correctAnswer);
   }
 
-// ===== 単一選択 =====
-if (typeof correctAnswer === 'object') {
   return {
-    correct:
-      userAnswer.toString().trim() === correctAnswer[0]
+    correct: isCorrect
   };
-}
-
-// ===== 入力問題 =====
-return {
-  correct:
-    userAnswer.toString().trim().toUpperCase() ===
-    correctAnswer.toString().trim().toUpperCase()
-};
-
 }
