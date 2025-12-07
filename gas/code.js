@@ -342,6 +342,93 @@ function clearQuestionCache() {
 }
 
 /**
+ * 全回答をまとめて判定する（一括採点）
+ * @param {Object} payload
+ * @param {string} payload.genre - ジャンル名
+ * @param {string} payload.level - レベル名
+ * @param {Array} payload.answers - [{questionId, answer}, ...] ユーザーの回答配列
+ * @return {Array} 正誤の配列 [true, false, true, ...]
+ */
+function judgeAllAnswers(payload) {
+  Logger.log('judgeAllAnswers payload: %s', JSON.stringify(payload));
+  
+  var cache = CacheService.getScriptCache();
+  var cacheKey = 'a_' + payload.genre + '_' + payload.level;
+  var answerMap = JSON.parse(cache.get(cacheKey) || '{}');
+  
+  if (Object.keys(answerMap).length === 0) {
+    throw new Error('正解データが見つかりません: ' + cacheKey);
+  }
+  
+  // 各問題の正誤を判定
+  var results = payload.answers.map(function(userAnswer) {
+    var correctAnswer = answerMap[userAnswer.questionId];
+    
+    if (correctAnswer === undefined) {
+      Logger.log('警告: 問題ID ' + userAnswer.questionId + ' の正解が見つかりません');
+      return false;
+    }
+    
+    var isCorrect = checkAnswer(userAnswer.answer, correctAnswer);
+    Logger.log('問題ID: %s, ユーザー回答: %s, 正解: %s, 判定: %s', 
+      userAnswer.questionId, 
+      JSON.stringify(userAnswer.answer), 
+      JSON.stringify(correctAnswer), 
+      isCorrect);
+    
+    return isCorrect;
+  });
+  
+  Logger.log('採点結果: %s', JSON.stringify(results));
+  return results;
+}
+
+/**
+ * 回答が正解かどうかをチェックする
+ * @param {string|Array} userAnswer - ユーザーの回答
+ * @param {string|Array} correctAnswer - 正解
+ * @return {boolean} 正解ならtrue
+ */
+function checkAnswer(userAnswer, correctAnswer) {
+  function normalize(v) {
+    if (v === null || v === undefined) return '';
+    return v.toString().trim().toUpperCase();
+  }
+  
+  // 複数選択の場合
+  if (Array.isArray(userAnswer)) {
+    if (!Array.isArray(correctAnswer)) {
+      return false;
+    }
+    
+    // 配列の長さが異なる場合は不正解
+    if (userAnswer.length !== correctAnswer.length) {
+      return false;
+    }
+    
+    // 配列をソートして比較
+    var ua = userAnswer.map(normalize).sort().join(',');
+    var ca = correctAnswer.map(normalize).sort().join(',');
+    return ua === ca;
+  } 
+  // 単一回答の場合
+  else {
+    // correctAnswerが配列で1要素の場合
+    if (Array.isArray(correctAnswer)) {
+      if (correctAnswer.length !== 1) {
+        return false;
+      }
+      return normalize(userAnswer) === normalize(correctAnswer[0]);
+    }
+    // 通常の単一回答
+    return normalize(userAnswer) === normalize(correctAnswer);
+  }
+}
+
+// 【既存のjudgeAnswer関数は残しておく（後方互換性のため）】
+// もし不要であれば削除してもOKですが、念のため残すことを推奨します
+
+/**
  * 回答を判定する
  *
  * @param {Object} payload

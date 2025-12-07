@@ -1,5 +1,5 @@
 /* ========================================
-   クイズアプリ - スタイルシート（修正版）
+   クイズアプリ - スタイルシート（一括採点版）
    ======================================== */
 
 /* 基本スタイル */
@@ -61,6 +61,13 @@ h1 {
   box-shadow: 0 5px 15px rgba(102,126,234,0.4);
 }
 
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* ボタンバリエーション */
 .btn-twitter {
   background: #1DA1F2;
@@ -89,16 +96,34 @@ h1 {
   background: #218838;
 }
 
-.submit-btn {
-  background: #28a745;
-  margin-top: 20px;
+/* ナビゲーションボタン */
+.btn-nav {
+  display: inline-block;
+  min-width: 140px;
+  margin: 10px 5px;
+  padding: 12px 20px;
+  font-size: 16px;
 }
 
-.submit-btn:hover {
+/* 採点ボタン */
+.submit-all-btn {
+  background: #28a745;
+  display: inline-block;
+  min-width: 160px;
+  margin: 10px 5px;
+  padding: 12px 20px;
+  font-size: 16px;
+}
+
+.submit-all-btn:hover:not(:disabled) {
   background: #218838;
 }
 
-/* 選択肢ボタン - 視覚的フィードバックを強化 */
+.submit-all-btn.disabled {
+  background: #ccc;
+}
+
+/* 選択肢ボタン */
 .choice-btn {
   width: 100%;
   margin: 10px 0;
@@ -110,7 +135,7 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
   box-sizing: border-box;
-  border: 2px solid transparent;  /* 常に2pxのborderを確保 */
+  border: 2px solid transparent;
   transition: all 0.2s ease;
 }
 
@@ -120,19 +145,12 @@ h1 {
   box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
-/* 選択時の色を明確に */
 .choice-btn.selected {
   background: #667eea;
   color: white;
-  border-color: #5568d3;  /* border-colorのみ変更 */
+  border-color: #5568d3;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-}
-
-/* 選択済みボタンにホバーしても色を維持 */
-.choice-btn.selected:hover {
-  background: #5568d3;
-  color: white;
 }
 
 .choice-btn.selected:hover {
@@ -157,7 +175,6 @@ h1 {
   transition: transform 0.2s ease;
 }
 
-/* 画像選択肢も選択時にハイライト */
 .choice-btn.image-choice.selected img {
   transform: scale(0.98);
   border: 3px solid white;
@@ -177,9 +194,42 @@ h1 {
   font-size: 18px;
 }
 
-/* 画像選択肢が選択されたときのラベルの色 */
 .choice-btn.selected .image-choice-label {
   color: white;
+}
+
+/* 回答状況インジケーター */
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.progress-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid #667eea;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.progress-dot.answered {
+  background: #667eea;
+}
+
+.progress-dot.unanswered {
+  background: white;
+}
+
+.progress-dot.current {
+  border-width: 3px;
+  border-color: #ff6b6b;
+  transform: scale(1.2);
 }
 
 /* 問題表示 */
@@ -215,6 +265,12 @@ h1 {
   color: #c92a2a;
   font-size: 16px;
   font-weight: bold;
+  text-align: center;
+}
+
+/* ナビゲーションエリア */
+#navigation {
+  margin-top: 30px;
   text-align: center;
 }
 
@@ -535,6 +591,17 @@ h1 {
     min-width: 100%;
   }
 
+  .btn-nav {
+    min-width: 120px;
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+
+  .submit-all-btn {
+    min-width: 100%;
+    margin: 15px 0;
+  }
+
   .score {
     font-size: 36px;
   }
@@ -565,5 +632,14 @@ h1 {
   .certificate-text {
     font-size: 24px;
     letter-spacing: 6px;
+  }
+
+  .progress-dot {
+    width: 24px;
+    height: 24px;
+  }
+
+  .progress-dots {
+    gap: 6px;
   }
 }

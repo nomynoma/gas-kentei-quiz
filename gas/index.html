@@ -46,13 +46,28 @@
 
   <!-- 問題画面 -->
   <div id="questionScreen" class="screen">
-    <div class="question-number" id="questionNumber"></div>
-    <div id="multipleInstruction" class="multiple-instruction hidden">
-      🔴 複数選択問題：正解と思うものをすべて選んでから「解答する」ボタンを押してください
+    <!-- 【追加】回答状況インジケーター -->
+    <div id="progressIndicator"></div>
+    
+    <!-- 問題番号（レベル名を含む形式に変更） -->
+    <div id="questionNumber" class="question-number"></div>
+    
+    <!-- 複数選択の注意書き -->
+    <div id="multipleInstruction" class="multiple-instruction" style="display:none;">
+      ⚠️ 複数選択問題です。該当する選択肢をすべて選んでください。
     </div>
-    <div class="question-text" id="questionText"></div>
+    
+    <!-- 問題文 -->
+    <div id="questionText" class="question-text"></div>
+    
+    <!-- 選択肢 -->
     <div id="choices"></div>
-    <div id="feedback"></div>
+    
+    <!-- 【削除】feedback は不要になりました -->
+    <!-- <div id="feedback"></div> -->
+    
+    <!-- 【追加】ナビゲーションエリア（前へ・次へ・採点ボタン） -->
+    <div id="navigation"></div>
   </div>
 
   <!-- 不合格画面 -->

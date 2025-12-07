@@ -1,5 +1,5 @@
 // ========================================
-// クイズアプリ - メインスクリプト（修正版）
+// クイズアプリ - メインスクリプト（一括採点版）
 // ========================================
 
 // ========================================
@@ -15,8 +15,8 @@ let currentLevelIndex = 0;
 let questions = [];
 let currentQuestion = 0;
 let score = 0;
-let answered = false;
-let selectedChoices = [];
+let selectedChoices = []; // 現在の問題で選択中の選択肢
+let userAnswers = []; // 全問題の回答を保存 [{questionId, answer}, ...]
 
 // 初期化：画像URLとジャンルボタンを動的に設定
 function initializeApp() {
@@ -125,6 +125,12 @@ function loadLevel(genre, level){
           questions = data;
           currentQuestion = 0;
           score = 0;
+          selectedChoices = [];
+          // userAnswersを初期化（全問題分の空配列を用意）
+          userAnswers = questions.map(q => ({
+            questionId: q.id,
+            answer: null
+          }));
           showQuestion();
         })
         .withFailureHandler(function(err){
@@ -136,23 +142,26 @@ function loadLevel(genre, level){
   });
 }
 
-// --- 問題表示（複数選択問題対応版） ---
+// --- 問題表示 ---
 function showQuestion(){
   if(currentQuestion >= questions.length){
-    showSectionResult();
+    // ここには来ないはず（採点ボタンから直接採点へ）
     return;
   }
 
-  answered = false;
-  selectedChoices = [];
   const q = questions[currentQuestion];
   const isMultiple = q.selectionType === 'multiple';
   const isInput = q.selectionType === 'input';
   const isImage = q.displayType === 'image';
 
-  document.getElementById('questionNumber').textContent = '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
+  // 回答状況インジケーターを表示
+  document.getElementById('progressIndicator').innerHTML = renderProgressIndicator();
+
+  // 問題番号とレベル表示
+  const levelName = levels[currentLevelIndex];
+  document.getElementById('questionNumber').textContent = levelName + '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
+  
   document.getElementById('questionText').innerHTML = DOMPurify.sanitize(q.question);
-  document.getElementById('feedback').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = isMultiple ? 'block' : 'none';
 
   const choicesDiv = document.getElementById('choices');
@@ -165,14 +174,7 @@ function showQuestion(){
     input.placeholder = '答えを入力してください';
     input.className = 'answer-input';
 
-    const submitBtn = document.createElement('button');
-    submitBtn.id = 'submitBtn';
-    submitBtn.className = 'btn submit-btn';
-    submitBtn.textContent = '解答する';
-    submitBtn.addEventListener('click', submitInputAnswer);
-
     choicesDiv.appendChild(input);
-    choicesDiv.appendChild(submitBtn);
 
   } else {
     const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
@@ -181,10 +183,12 @@ function showQuestion(){
 
     Object.keys(choiceMap).forEach(label => {
       const value = choiceMap[label];
+      if(!value) return; // 空の選択肢はスキップ
+      
       const button = document.createElement('button');
       button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
       button.dataset.label = label;
-      button.dataset.value = value; // 選択肢のテキスト内容を保存
+      button.dataset.value = value;
 
       if(isImage){
         button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
@@ -195,27 +199,12 @@ function showQuestion(){
       }
 
       if(isMultiple){
-        // 複数選択 - buttonオブジェクトを渡す
         button.addEventListener('click', function() {
           toggleChoiceByButton(this);
         });
       } else {
-        // 単一選択 - data-value属性から値を取得
         button.addEventListener('click', function() {
-          if(answered) return;
-          
-          // すべての選択肢から選択状態を削除
-          document.querySelectorAll('.choice-btn').forEach(btn => {
-            btn.classList.remove('selected');
-          });
-          
-          // クリックされた選択肢に選択状態を追加
-          this.classList.add('selected');
-          
-          // 少し遅延させてから判定（視覚的フィードバックを見せるため）
-          setTimeout(() => {
-            checkAnswerByValue(this.dataset.value);
-          }, 200);
+          selectSingleChoice(this);
         });
       }
 
@@ -223,25 +212,92 @@ function showQuestion(){
     });
 
     choicesDiv.appendChild(gridDiv);
-
-    if(isMultiple){
-      const submitBtn = document.createElement('button');
-      submitBtn.id = 'submitBtn';
-      submitBtn.className = 'btn submit-btn';
-      submitBtn.textContent = '解答する';
-      submitBtn.addEventListener('click', submitMultipleAnswer);
-      choicesDiv.appendChild(submitBtn);
-    }
   }
+
+  // ナビゲーションボタンを表示
+  renderNavigationButtons();
+
+  // 以前の回答を復元
+  restoreSavedAnswer();
 
   showScreen('questionScreen');
 }
 
-// --- 複数選択問題の選択切替 - 値（テキスト）で管理 ---
-function toggleChoiceByButton(button){
-  if(answered) return;
+// --- 回答状況インジケーター ---
+function renderProgressIndicator() {
+  let html = '<div class="progress-dots">';
+  for(let i = 0; i < questions.length; i++) {
+    const answered = userAnswers[i] && userAnswers[i].answer !== null;
+    const current = i === currentQuestion;
+    const dotClass = `progress-dot ${answered ? 'answered' : 'unanswered'} ${current ? 'current' : ''}`;
+    html += `<span class="${dotClass}"></span>`;
+  }
+  html += '</div>';
+  return html;
+}
 
-  const value = button.dataset.value;  // data-value属性から値を取得
+// --- ナビゲーションボタンを表示 ---
+function renderNavigationButtons() {
+  const navDiv = document.getElementById('navigation');
+  navDiv.innerHTML = '';
+
+  // 前の問題ボタン
+  if(currentQuestion > 0) {
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn btn-nav';
+    prevBtn.textContent = '← 前の問題';
+    prevBtn.onclick = previousQuestion;
+    navDiv.appendChild(prevBtn);
+  }
+
+  // 次の問題ボタン
+  if(currentQuestion < questions.length - 1) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-nav';
+    nextBtn.textContent = '次の問題 →';
+    nextBtn.onclick = nextQuestion;
+    navDiv.appendChild(nextBtn);
+  }
+
+  // 採点ボタン
+  const submitBtn = document.createElement('button');
+  submitBtn.id = 'submitAllBtn';
+  submitBtn.className = 'btn submit-all-btn';
+  submitBtn.textContent = '採点する';
+  submitBtn.onclick = submitAllAnswers;
+  
+  // 全問回答済みでなければ無効化
+  if(!canSubmit()) {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('disabled');
+  }
+  
+  navDiv.appendChild(submitBtn);
+}
+
+// --- 単一選択 ---
+function selectSingleChoice(button) {
+  // すべての選択肢から選択状態を削除
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  
+  // クリックされた選択肢に選択状態を追加
+  button.classList.add('selected');
+  
+  // selectedChoicesを更新
+  selectedChoices = [button.dataset.value];
+  
+  // 回答を保存
+  saveCurrentAnswer();
+  
+  // ナビゲーションボタンを更新（採点ボタンの有効化）
+  renderNavigationButtons();
+}
+
+// --- 複数選択の選択切替 ---
+function toggleChoiceByButton(button){
+  const value = button.dataset.value;
   
   const idx = selectedChoices.indexOf(value);
   if(idx > -1){
@@ -251,139 +307,145 @@ function toggleChoiceByButton(button){
   }
 
   // 選択状態を反映
+  updateSelectedButtons();
+  
+  // 回答を保存
+  saveCurrentAnswer();
+  
+  // ナビゲーションボタンを更新（採点ボタンの有効化）
+  renderNavigationButtons();
+}
+
+function updateSelectedButtons() {
   document.querySelectorAll('.choice-btn').forEach(btn => {
     btn.classList.toggle('selected', selectedChoices.includes(btn.dataset.value));
   });
 }
 
-// 複数選択 - 値の配列を送信
-function submitMultipleAnswer(){
-  if(answered) return;
-  if(selectedChoices.length === 0){
-    alert('少なくとも1つ選択してください');
+// --- 現在の回答を保存 ---
+function saveCurrentAnswer() {
+  const q = questions[currentQuestion];
+  const isMultiple = q.selectionType === 'multiple';
+  const isInput = q.selectionType === 'input';
+  
+  let answer = null;
+  
+  if(isInput) {
+    const input = document.getElementById('inputAnswer');
+    if(input && input.value.trim()) {
+      answer = input.value.trim();
+    }
+  } else if(isMultiple) {
+    if(selectedChoices.length > 0) {
+      answer = [...selectedChoices]; // 配列をコピー
+    }
+  } else {
+    // 単一選択
+    if(selectedChoices.length > 0) {
+      answer = selectedChoices[0];
+    }
+  }
+  
+  // userAnswersに保存
+  userAnswers[currentQuestion] = {
+    questionId: q.id,
+    answer: answer
+  };
+  
+  // インジケーターを更新
+  document.getElementById('progressIndicator').innerHTML = renderProgressIndicator();
+}
+
+// --- 保存された回答を復元 ---
+function restoreSavedAnswer() {
+  const savedAnswer = userAnswers[currentQuestion];
+  if(!savedAnswer || savedAnswer.answer === null) {
+    selectedChoices = [];
     return;
   }
-
-  answered = true;
+  
   const q = questions[currentQuestion];
-  const feedbackDiv = document.getElementById('feedback');
-
-  // すべての選択肢ボタンを無効化（連打防止）
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.style.pointerEvents = 'none';
-  });
-
-  google.script.run
-    .withSuccessHandler(result => {
-      if(result.correct){
-        score++;
-        feedbackDiv.innerHTML =
-          '<div class="result correct">✓ 正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      } else {
-        feedbackDiv.innerHTML =
-          '<div class="result incorrect">✗ 不正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      }
-    })
-    .withFailureHandler(() => { 
-      answered = false;
-      // エラー時は選択肢を再度有効化
-      document.querySelectorAll('.choice-btn').forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-      });
-    })
-    .judgeAnswer({
-      questionId: q.id,
-      answer: selectedChoices, // 値（テキスト）の配列を送信
-      genre: currentGenre,
-      level: levels[currentLevelIndex] 
-    });
-
-  const submitBtn = document.getElementById('submitBtn');
-  if(submitBtn) submitBtn.style.display = 'none';
+  const isInput = q.selectionType === 'input';
+  
+  if(isInput) {
+    const input = document.getElementById('inputAnswer');
+    if(input) input.value = savedAnswer.answer;
+    selectedChoices = [];
+  } else if(Array.isArray(savedAnswer.answer)) {
+    // 複数選択
+    selectedChoices = [...savedAnswer.answer];
+    updateSelectedButtons();
+  } else {
+    // 単一選択
+    selectedChoices = [savedAnswer.answer];
+    updateSelectedButtons();
+  }
 }
 
-// 単一選択 - 値を送信（修正済み）
-function checkAnswerByValue(value){
-  if(answered) return;
-  answered = true;
-
-  const q = questions[currentQuestion];
-  const feedbackDiv = document.getElementById('feedback');
-
-  // すべての選択肢ボタンを無効化（連打防止）
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.style.pointerEvents = 'none';
-  });
-
-  google.script.run
-    .withSuccessHandler(result => {
-      if(result.correct){
-        score++;
-        feedbackDiv.innerHTML =
-          '<div class="result correct">✓ 正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      } else {
-        feedbackDiv.innerHTML =
-          '<div class="result incorrect">✗ 不正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      }
-    })
-    .withFailureHandler(() => {
-      answered = false;
-      // エラー時は選択肢を再度有効化
-      document.querySelectorAll('.choice-btn').forEach(btn => {
-        btn.style.pointerEvents = 'auto';
-      });
-    })
-    .judgeAnswer({
-      questionId: q.id,
-      answer: value, // 値（テキスト）を送信
-      genre: currentGenre,
-      level: levels[currentLevelIndex] 
-    });
+// --- 前の問題へ ---
+function previousQuestion() {
+  if(currentQuestion > 0) {
+    // 入力問題の場合は保存
+    const q = questions[currentQuestion];
+    if(q.selectionType === 'input') {
+      saveCurrentAnswer();
+    }
+    
+    currentQuestion--;
+    showQuestion();
+  }
 }
 
-// 入力問題
-function submitInputAnswer(){
-  if(answered) return;
+// --- 次の問題へ ---
+function nextQuestion() {
+  if(currentQuestion < questions.length - 1) {
+    // 入力問題の場合は保存
+    const q = questions[currentQuestion];
+    if(q.selectionType === 'input') {
+      saveCurrentAnswer();
+    }
+    
+    currentQuestion++;
+    showQuestion();
+  }
+}
 
-  const input = document.getElementById('inputAnswer').value.trim();
-  if(input === ''){
-    alert('答えを入力してください');
+// --- 全問回答済みかチェック ---
+function canSubmit() {
+  return userAnswers.every(a => a && a.answer !== null);
+}
+
+// --- 全回答を一括送信 ---
+function submitAllAnswers() {
+  // 入力問題の場合は最後に保存
+  const q = questions[currentQuestion];
+  if(q.selectionType === 'input') {
+    saveCurrentAnswer();
+  }
+  
+  if(!canSubmit()) {
+    alert('全ての問題に回答してください');
     return;
   }
-
-  answered = true;
-  const q = questions[currentQuestion];
-  const feedbackDiv = document.getElementById('feedback');
-
+  
+  showScreen('loading');
+  
   google.script.run
-    .withSuccessHandler(result => {
-      if(result.correct){
-        score++;
-        feedbackDiv.innerHTML =
-          '<div class="result correct">✓ 正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      } else {
-        feedbackDiv.innerHTML =
-          '<div class="result incorrect">✗ 不正解！</div>' +
-          '<button class="btn" onclick="nextQuestion()">次へ</button>';
-      }
+    .withSuccessHandler(function(results){
+      // results = [true, false, true, ...] (正誤の配列)
+      score = results.filter(r => r).length;
+      showSectionResult();
     })
-    .judgeAnswer({
-      questionId: q.id,
-      answer: input,
+    .withFailureHandler(function(err){
+      alert('採点に失敗しました: ' + err);
+      showScreen('questionScreen');
+    })
+    .judgeAllAnswers({
       genre: currentGenre,
-      level: levels[currentLevelIndex] 
+      level: levels[currentLevelIndex],
+      answers: userAnswers
     });
-
-  const submitBtn = document.getElementById('submitBtn');
-  if(submitBtn) submitBtn.style.display = 'none';
 }
-
-function nextQuestion(){ currentQuestion++; showQuestion(); }
 
 // レベル結果
 function showSectionResult(){
@@ -433,6 +495,7 @@ function showCertificate(){
 // 合格証作成中ローディング表示 → 画像生成 → 合格証画面表示
 function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml){
   // ローディング画面を表示（問題画面エリアを使用）
+  document.getElementById('progressIndicator').innerHTML = '';
   document.getElementById('questionNumber').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = 'none';
   document.getElementById('questionText').innerHTML =
@@ -442,7 +505,7 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
     '<div class="loading-spinner"></div>' +
     '</div>';
   document.getElementById('choices').innerHTML = '';
-  document.getElementById('feedback').innerHTML = '';
+  document.getElementById('navigation').innerHTML = '';
   showScreen('questionScreen'); // 問題画面エリアを使ってローディング表示
 
   // キャプチャ用エリアに設定
@@ -567,7 +630,6 @@ function shareFailToX(){
   window.open(twitterUrl, '_blank', 'width=550,height=420');
 }
 
-
 // 合格証URLを表示
 function displayCertificateUrl(hash){
   // 合格証ページのURLを生成（CERTIFICATE_BASE_URLを使用）
@@ -632,8 +694,8 @@ function restartQuiz(){
   questions = [];
   currentQuestion = 0;
   score = 0;
-  answered = false;
   selectedChoices = [];
+  userAnswers = [];
   document.getElementById('nicknameInput').value = '';
 
   // ニックネーム画面の表示状態をリセット
