@@ -97,22 +97,39 @@ h1 {
 }
 
 /* ナビゲーションボタン */
-.btn-nav {
+.btn-nav-small {
   display: inline-block;
-  min-width: 140px;
-  margin: 10px 5px;
-  padding: 12px 20px;
-  font-size: 16px;
+  min-width: 100px;
+  margin: 0;
+  padding: 10px 15px;
+  font-size: 15px;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.btn-nav-left {
+  margin-right: auto;
+}
+
+.btn-nav-right {
+  margin-left: auto;
 }
 
 /* 採点ボタン */
 .submit-all-btn {
   background: #28a745;
-  display: inline-block;
-  min-width: 160px;
-  margin: 10px 5px;
-  padding: 12px 20px;
-  font-size: 16px;
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin: 20px auto 10px auto;
+  padding: 15px 20px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 .submit-all-btn:hover:not(:disabled) {
@@ -204,7 +221,7 @@ h1 {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   flex-wrap: wrap;
 }
 
@@ -216,6 +233,13 @@ h1 {
   border: 2px solid #667eea;
   background: white;
   transition: all 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.progress-dot:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(102,126,234,0.4);
 }
 
 .progress-dot.answered {

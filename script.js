@@ -230,10 +230,24 @@ function renderProgressIndicator() {
     const answered = userAnswers[i] && userAnswers[i].answer !== null;
     const current = i === currentQuestion;
     const dotClass = `progress-dot ${answered ? 'answered' : 'unanswered'} ${current ? 'current' : ''}`;
-    html += `<span class="${dotClass}"></span>`;
+    html += `<span class="${dotClass}" onclick="jumpToQuestion(${i})" title="問題${i+1}"></span>`;
   }
   html += '</div>';
   return html;
+}
+
+// --- 指定した問題番号にジャンプ ---
+function jumpToQuestion(index) {
+  if(index < 0 || index >= questions.length) return;
+  
+  // 入力問題の場合は現在の回答を保存
+  const q = questions[currentQuestion];
+  if(q.selectionType === 'input') {
+    saveCurrentAnswer();
+  }
+  
+  currentQuestion = index;
+  showQuestion();
 }
 
 // --- ナビゲーションボタンを表示 ---
@@ -292,6 +306,7 @@ function selectSingleChoice(button) {
   saveCurrentAnswer();
   
   // ナビゲーションボタンを更新（採点ボタンの有効化）
+  renderTopNavigationButtons();
   renderNavigationButtons();
 }
 
@@ -313,6 +328,7 @@ function toggleChoiceByButton(button){
   saveCurrentAnswer();
   
   // ナビゲーションボタンを更新（採点ボタンの有効化）
+  renderTopNavigationButtons();
   renderNavigationButtons();
 }
 
