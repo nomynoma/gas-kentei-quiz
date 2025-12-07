@@ -1,5 +1,5 @@
 // ========================================
-// クイズアプリ - メインスクリプト
+// クイズアプリ - メインスクリプト（修正版）
 // ========================================
 
 // ========================================
@@ -184,7 +184,7 @@ function showQuestion(){
       const button = document.createElement('button');
       button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
       button.dataset.label = label;
-      button.dataset.value = label;
+      button.dataset.value = value; // 選択肢のテキスト内容を保存
 
       if(isImage){
         button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
@@ -195,9 +195,12 @@ function showQuestion(){
       }
 
       if(isMultiple){
-        button.addEventListener('click', () => toggleChoiceByValue(label));
+        // 複数選択 - buttonオブジェクトを渡す
+        button.addEventListener('click', function() {
+          toggleChoiceByButton(this);
+        });
       } else {
-        // 単一選択でも視覚的フィードバックを追加
+        // 単一選択 - data-value属性から値を取得
         button.addEventListener('click', function() {
           if(answered) return;
           
@@ -211,7 +214,7 @@ function showQuestion(){
           
           // 少し遅延させてから判定（視覚的フィードバックを見せるため）
           setTimeout(() => {
-            checkAnswerByValue(value);
+            checkAnswerByValue(this.dataset.value);
           }, 200);
         });
       }
@@ -234,38 +237,26 @@ function showQuestion(){
   showScreen('questionScreen');
 }
 
-// --- 複数選択問題の選択切替 ---
-function toggleChoiceByValue(label){
+// --- 複数選択問題の選択切替 - 値（テキスト）で管理 ---
+function toggleChoiceByButton(button){
   if(answered) return;
 
-  const idx = selectedChoices.indexOf(label);
+  const value = button.dataset.value;  // data-value属性から値を取得
+  
+  const idx = selectedChoices.indexOf(value);
   if(idx > -1){
     selectedChoices.splice(idx, 1);
   } else {
-    selectedChoices.push(label);
+    selectedChoices.push(value);
   }
 
   // 選択状態を反映
   document.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.classList.toggle('selected', selectedChoices.includes(btn.dataset.label));
+    btn.classList.toggle('selected', selectedChoices.includes(btn.dataset.value));
   });
 }
 
-function updateChoiceButtonsByValue(){
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    const value = btn.dataset.value;
-    btn.classList.toggle('selected', selectedChoices.includes(value));
-  });
-}
-
-function updateChoiceButtons(){
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    const label = btn.dataset.label;
-    btn.classList.toggle('selected', selectedChoices.includes(label));
-  });
-}
-
-// 複数選択
+// 複数選択 - 値の配列を送信
 function submitMultipleAnswer(){
   if(answered) return;
   if(selectedChoices.length === 0){
@@ -304,7 +295,7 @@ function submitMultipleAnswer(){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: selectedChoices,
+      answer: selectedChoices, // 値（テキスト）の配列を送信
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
@@ -313,7 +304,7 @@ function submitMultipleAnswer(){
   if(submitBtn) submitBtn.style.display = 'none';
 }
 
-// 単一選択
+// 単一選択 - 値を送信（修正済み）
 function checkAnswerByValue(value){
   if(answered) return;
   answered = true;
@@ -348,7 +339,7 @@ function checkAnswerByValue(value){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: value,
+      answer: value, // 値（テキスト）を送信
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
