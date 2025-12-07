@@ -1,5 +1,5 @@
 // ========================================
-// クイズアプリ - メインスクリプト（一括採点版）
+// クイズアプリ - メインスクリプト（一括採点版・完全版）
 // ========================================
 
 // ========================================
@@ -214,7 +214,10 @@ function showQuestion(){
     choicesDiv.appendChild(gridDiv);
   }
 
-  // ナビゲーションボタンを表示
+  // 上部ナビゲーションボタンを表示（前へ・次へのみ）
+  renderTopNavigationButtons();
+
+  // 下部ナビゲーションボタンを表示（前へ・次へ・採点）
   renderNavigationButtons();
 
   // 以前の回答を復元
@@ -250,34 +253,76 @@ function jumpToQuestion(index) {
   showQuestion();
 }
 
-// --- ナビゲーションボタンを表示 ---
+// --- 上部ナビゲーションボタン（前へ・次へのみ） ---
+function renderTopNavigationButtons() {
+  const topNavDiv = document.getElementById('topNavigation');
+  topNavDiv.innerHTML = '';
+
+  const navContainer = document.createElement('div');
+  navContainer.className = 'nav-container';
+
+  // 前へボタン
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'btn btn-nav-small btn-nav-left';
+  prevBtn.textContent = '← 前へ';
+  prevBtn.onclick = previousQuestion;
+  if(currentQuestion === 0) {
+    prevBtn.disabled = true;
+  }
+  navContainer.appendChild(prevBtn);
+
+  // 次へボタン
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-nav-small btn-nav-right';
+  nextBtn.textContent = '次へ →';
+  nextBtn.onclick = nextQuestion;
+  if(currentQuestion === questions.length - 1) {
+    nextBtn.disabled = true;
+  }
+  navContainer.appendChild(nextBtn);
+
+  topNavDiv.appendChild(navContainer);
+}
+
+// --- 下部ナビゲーションボタン（前へ・次へ・採点） ---
 function renderNavigationButtons() {
   const navDiv = document.getElementById('navigation');
   navDiv.innerHTML = '';
 
-  // 前の問題ボタン
-  if(currentQuestion > 0) {
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'btn btn-nav';
-    prevBtn.textContent = '← 前の問題';
-    prevBtn.onclick = previousQuestion;
-    navDiv.appendChild(prevBtn);
-  }
+  // 前へ・次へのコンテナ
+  const navContainer = document.createElement('div');
+  navContainer.className = 'nav-container';
 
-  // 次の問題ボタン
-  if(currentQuestion < questions.length - 1) {
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn-nav';
-    nextBtn.textContent = '次の問題 →';
-    nextBtn.onclick = nextQuestion;
-    navDiv.appendChild(nextBtn);
+  // 前へボタン
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'btn btn-nav-small btn-nav-left';
+  prevBtn.textContent = '← 前へ';
+  prevBtn.onclick = previousQuestion;
+  if(currentQuestion === 0) {
+    prevBtn.disabled = true;
   }
+  navContainer.appendChild(prevBtn);
+
+  // 次へボタン
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-nav-small btn-nav-right';
+  nextBtn.textContent = '次へ →';
+  nextBtn.onclick = nextQuestion;
+  if(currentQuestion === questions.length - 1) {
+    nextBtn.disabled = true;
+  }
+  navContainer.appendChild(nextBtn);
+
+  navDiv.appendChild(navContainer);
+
+  // 改行を追加
+  navDiv.appendChild(document.createElement('br'));
 
   // 採点ボタン
   const submitBtn = document.createElement('button');
   submitBtn.id = 'submitAllBtn';
   submitBtn.className = 'btn submit-all-btn';
-  submitBtn.textContent = '採点する';
+  submitBtn.textContent = '採点';
   submitBtn.onclick = submitAllAnswers;
   
   // 全問回答済みでなければ無効化
@@ -444,7 +489,8 @@ function submitAllAnswers() {
     return;
   }
   
-  showScreen('loading');
+  // 採点中ローディング画面を表示
+  showGradingLoading();
   
   google.script.run
     .withSuccessHandler(function(results){
@@ -461,6 +507,23 @@ function submitAllAnswers() {
       level: levels[currentLevelIndex],
       answers: userAnswers
     });
+}
+
+// --- 採点中ローディング画面を表示 ---
+function showGradingLoading() {
+  document.getElementById('progressIndicator').innerHTML = '';
+  document.getElementById('topNavigation').innerHTML = '';
+  document.getElementById('questionNumber').innerHTML = '';
+  document.getElementById('multipleInstruction').style.display = 'none';
+  document.getElementById('questionText').innerHTML =
+    '<div class="loading-container">' +
+    '<div class="loading-title">📝 採点中...</div>' +
+    '<div class="loading-message">しばらくお待ちください</div>' +
+    '<div class="loading-spinner"></div>' +
+    '</div>';
+  document.getElementById('choices').innerHTML = '';
+  document.getElementById('navigation').innerHTML = '';
+  showScreen('questionScreen');
 }
 
 // レベル結果
@@ -512,6 +575,7 @@ function showCertificate(){
 function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml){
   // ローディング画面を表示（問題画面エリアを使用）
   document.getElementById('progressIndicator').innerHTML = '';
+  document.getElementById('topNavigation').innerHTML = '';
   document.getElementById('questionNumber').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = 'none';
   document.getElementById('questionText').innerHTML =
