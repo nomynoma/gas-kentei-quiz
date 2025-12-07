@@ -136,7 +136,7 @@ function loadLevel(genre, level){
   });
 }
 
-// 問題表示（HTMLタグ入り選択肢対応版）
+// --- 問題表示（複数選択問題対応版） ---
 function showQuestion(){
   if(currentQuestion >= questions.length){
     showSectionResult();
@@ -151,7 +151,7 @@ function showQuestion(){
   const isImage = q.displayType === 'image';
 
   document.getElementById('questionNumber').textContent = '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
-  document.getElementById('questionText').innerHTML = DOMPurify.sanitize(q.question); // サニタイズ
+  document.getElementById('questionText').innerHTML = DOMPurify.sanitize(q.question);
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = isMultiple ? 'block' : 'none';
 
@@ -183,21 +183,19 @@ function showQuestion(){
       const value = choiceMap[label];
       const button = document.createElement('button');
       button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
-      button.dataset.label = label;
-      button.dataset.value = value;
+      button.dataset.label = label; // ここは label を統一
+      button.dataset.value = label; // 選択管理用も label
 
       if(isImage){
-        // 画像の場合は URL として扱い
         button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
                             <div class="image-choice-label">${label}</div>`;
       } else {
-        // HTMLタグを含むテキストは DOMPurify でサニタイズ
         const sanitizedHtml = DOMPurify.sanitize(value);
         button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
       }
 
       if(isMultiple){
-        button.addEventListener('click', () => toggleChoiceByValue(value));
+        button.addEventListener('click', () => toggleChoiceByValue(label));
       } else {
         button.addEventListener('click', () => checkAnswerByValue(value));
       }
@@ -220,18 +218,21 @@ function showQuestion(){
   showScreen('questionScreen');
 }
 
-// 複数選択（順序を安定させる）
-function toggleChoiceByValue(value){
+// --- 複数選択問題の選択切替 ---
+function toggleChoiceByValue(label){
   if(answered) return;
 
-  const idx = selectedChoices.indexOf(value);
+  const idx = selectedChoices.indexOf(label);
   if(idx > -1){
     selectedChoices.splice(idx, 1);
   } else {
-    selectedChoices.push(value);
+    selectedChoices.push(label);
   }
 
-  updateChoiceButtonsByValue();
+  // 選択状態を反映
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.classList.toggle('selected', selectedChoices.includes(btn.dataset.label));
+  });
 }
 
 function updateChoiceButtonsByValue(){
