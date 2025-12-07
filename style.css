@@ -1,5 +1,5 @@
 /* ========================================
-   クイズアプリ - スタイルシート
+   クイズアプリ - スタイルシート（修正版）
    ======================================== */
 
 /* 基本スタイル */
@@ -98,7 +98,7 @@ h1 {
   background: #218838;
 }
 
-/* 選択肢ボタン */
+/* 選択肢ボタン - 視覚的フィードバックを強化 */
 .choice-btn {
   width: 100%;
   margin: 10px 0;
@@ -110,16 +110,34 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
   box-sizing: border-box;
+  border: 2px solid transparent;  /* 常に2pxのborderを確保 */
+  transition: all 0.2s ease;
 }
 
 .choice-btn:hover {
   background: #e9ecef;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
+/* 選択時の色を明確に */
 .choice-btn.selected {
-  background: #d4e7ff;
-  border: 2px solid #667eea;
+  background: #667eea;
+  color: white;
+  border-color: #5568d3;  /* border-colorのみ変更 */
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+}
+
+/* 選択済みボタンにホバーしても色を維持 */
+.choice-btn.selected:hover {
+  background: #5568d3;
+  color: white;
+}
+
+.choice-btn.selected:hover {
+  background: #5568d3;
+  color: white;
 }
 
 .choice-btn.image-choice {
@@ -136,6 +154,13 @@ h1 {
   border-radius: 8px;
   display: block;
   margin: 0 auto;
+  transition: transform 0.2s ease;
+}
+
+/* 画像選択肢も選択時にハイライト */
+.choice-btn.image-choice.selected img {
+  transform: scale(0.98);
+  border: 3px solid white;
 }
 
 .image-grid {
@@ -150,6 +175,11 @@ h1 {
   margin-top: 8px;
   font-weight: bold;
   font-size: 18px;
+}
+
+/* 画像選択肢が選択されたときのラベルの色 */
+.choice-btn.selected .image-choice-label {
+  color: white;
 }
 
 /* 問題表示 */

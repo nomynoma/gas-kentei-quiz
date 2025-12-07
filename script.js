@@ -183,8 +183,8 @@ function showQuestion(){
       const value = choiceMap[label];
       const button = document.createElement('button');
       button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
-      button.dataset.label = label; // ここは label を統一
-      button.dataset.value = label; // 選択管理用も label
+      button.dataset.label = label;
+      button.dataset.value = label;
 
       if(isImage){
         button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
@@ -197,7 +197,23 @@ function showQuestion(){
       if(isMultiple){
         button.addEventListener('click', () => toggleChoiceByValue(label));
       } else {
-        button.addEventListener('click', () => checkAnswerByValue(value));
+        // 単一選択でも視覚的フィードバックを追加
+        button.addEventListener('click', function() {
+          if(answered) return;
+          
+          // すべての選択肢から選択状態を削除
+          document.querySelectorAll('.choice-btn').forEach(btn => {
+            btn.classList.remove('selected');
+          });
+          
+          // クリックされた選択肢に選択状態を追加
+          this.classList.add('selected');
+          
+          // 少し遅延させてから判定（視覚的フィードバックを見せるため）
+          setTimeout(() => {
+            checkAnswerByValue(value);
+          }, 200);
+        });
       }
 
       gridDiv.appendChild(button);
@@ -261,6 +277,11 @@ function submitMultipleAnswer(){
   const q = questions[currentQuestion];
   const feedbackDiv = document.getElementById('feedback');
 
+  // すべての選択肢ボタンを無効化（連打防止）
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.style.pointerEvents = 'none';
+  });
+
   google.script.run
     .withSuccessHandler(result => {
       if(result.correct){
@@ -274,10 +295,16 @@ function submitMultipleAnswer(){
           '<button class="btn" onclick="nextQuestion()">次へ</button>';
       }
     })
-    .withFailureHandler(() => { answered = false; })
+    .withFailureHandler(() => { 
+      answered = false;
+      // エラー時は選択肢を再度有効化
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+      });
+    })
     .judgeAnswer({
       questionId: q.id,
-      answer: selectedChoices, // label ではなく value 配列
+      answer: selectedChoices,
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
@@ -294,6 +321,11 @@ function checkAnswerByValue(value){
   const q = questions[currentQuestion];
   const feedbackDiv = document.getElementById('feedback');
 
+  // すべての選択肢ボタンを無効化（連打防止）
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.style.pointerEvents = 'none';
+  });
+
   google.script.run
     .withSuccessHandler(result => {
       if(result.correct){
@@ -307,9 +339,16 @@ function checkAnswerByValue(value){
           '<button class="btn" onclick="nextQuestion()">次へ</button>';
       }
     })
+    .withFailureHandler(() => {
+      answered = false;
+      // エラー時は選択肢を再度有効化
+      document.querySelectorAll('.choice-btn').forEach(btn => {
+        btn.style.pointerEvents = 'auto';
+      });
+    })
     .judgeAnswer({
       questionId: q.id,
-      answer: value, // label ではなく value
+      answer: value,
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
