@@ -42,21 +42,6 @@ function initializeApp() {
   initializeGenreButtons();
 }
 
-// ジャンルボタンを動的に生成
-function initializeGenreButtons() {
-  const genreButtonsDiv = document.getElementById('genreButtons');
-  if (!genreButtonsDiv || !GENRE_NAMES) return;
-
-  genreButtonsDiv.innerHTML = '';
-  GENRE_NAMES.forEach(genreName => {
-    const button = document.createElement('button');
-    button.className = 'btn';
-    button.textContent = genreName;
-    button.onclick = function() { selectGenre(genreName); };
-    genreButtonsDiv.appendChild(button);
-  });
-}
-
 // ページ読み込み時に初期化を実行
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
@@ -706,29 +691,29 @@ function initializeGenreButtons() {
       const certificateData = localStorage.getItem(storageKey);
       
       if(certificateData) {
-        const badge = document.createElement('span');
-        badge.className = 'certificate-badge';
+        // <a>タグでリンクを作成
+        const badgeLink = document.createElement('a');
+        badgeLink.href = certificateData;
+        badgeLink.target = '_blank';
+        badgeLink.className = 'certificate-badge';
+        badgeLink.title = levelName + '合格証を別窓で開く';
         
         // 絵文字で表示（初級：🥉、中級：🥈、上級：🥇）
         const emoji = index === 0 ? '🥉' : index === 1 ? '🥈' : '🥇';
-        badge.textContent = emoji;
-        badge.title = levelName + '合格';
-        badge.onclick = function(e) {
+        badgeLink.textContent = emoji;
+        
+        // ジャンルボタンのクリックイベントを防ぐ
+        badgeLink.onclick = function(e) {
           e.stopPropagation();
-          openCertificateFromBadge(certificateData);
         };
-        badgesDiv.appendChild(badge);
+        
+        badgesDiv.appendChild(badgeLink);
       }
     });
     
     container.appendChild(badgesDiv);
     genreButtonsDiv.appendChild(container);
   });
-}
-
-// バッジから合格証を別窓で開く
-function openCertificateFromBadge(certificateData) {
-  window.open(certificateData, '_blank');
 }
 
 // Xで共有（合格時）

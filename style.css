@@ -580,6 +580,7 @@ h1 {
   font-size: 20px;
   cursor: pointer;
   transition: transform 0.2s ease;
+  text-decoration: none;
 }
 
 .certificate-badge:hover {
