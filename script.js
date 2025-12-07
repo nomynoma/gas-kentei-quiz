@@ -645,7 +645,11 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
 // 合格証画面を表示（生成した画像を使用）
 function showCertificateScreen(levelName, imageDataBase64){
   // 生成した画像を表示
-  document.getElementById('certificateDisplayImage').src = imageDataBase64;
+  const certImg = document.getElementById('certificateDisplayImage');
+  const certLink = document.getElementById('certificateLink');
+  
+  certImg.src = imageDataBase64;
+  certLink.href = imageDataBase64;  // data:image/jpeg;base64,... をhrefに設定
 
   // ボタンの表示制御
   if(currentLevelIndex < levels.length - 1){

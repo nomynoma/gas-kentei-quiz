@@ -87,13 +87,13 @@
   <div id="certificateScreen" class="screen">
     <!-- 合格証明書エリア（生成した画像を表示・クリックで別窓） -->
     <div id="certificateArea" class="certificate-area">
-      <img id="certificateDisplayImage" 
-          src="" 
-          alt="合格証明書" 
-          class="certificate-display-image"
-          onclick="openCertificateInNewWindow()" 
-          style="cursor: pointer;"
-          title="クリックで別窓表示">
+      <a id="certificateLink" href="" target="_blank">
+        <img id="certificateDisplayImage" 
+            src="" 
+            alt="合格証明書" 
+            class="certificate-display-image"
+            title="クリックで別窓表示">
+      </a>
     </div>
     <!-- ボタンエリア -->
     <div class="button-area">
