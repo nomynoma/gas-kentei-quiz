@@ -136,8 +136,7 @@ function loadLevel(genre, level){
   });
 }
 
-
-// 問題表示
+// 問題表示（HTMLタグ入り選択肢対応版）
 function showQuestion(){
   if(currentQuestion >= questions.length){
     showSectionResult();
@@ -152,62 +151,94 @@ function showQuestion(){
   const isImage = q.displayType === 'image';
 
   document.getElementById('questionNumber').textContent = '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
-  document.getElementById('questionText').innerHTML = q.question;
+  document.getElementById('questionText').innerHTML = DOMPurify.sanitize(q.question); // サニタイズ
   document.getElementById('feedback').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = isMultiple ? 'block' : 'none';
 
   const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
 
-  // 入力問題の場合
   if(isInput){
-    let html = '<input type="text" id="inputAnswer" placeholder="答えを入力してください" class="answer-input">';
-    html += '<button id="submitBtn" class="btn submit-btn" onclick="submitInputAnswer()">解答する</button>';
-    choicesDiv.innerHTML = html;
-  } else {
-    // 選択問題の場合（既存のコード）
-    const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
-    let html = '<div class="image-grid">';
-    Object.keys(choiceMap).forEach(label => {
-      const onclick = isMultiple ? "toggleChoice('" + label + "')" : "checkAnswer('" + label + "')";
-      const buttonClass = 'btn choice-btn' + (isImage ? ' image-choice' : '');
-      const content = isImage
-        ? '<img src="' + choiceMap[label] + '" alt="選択肢' + label + '" onerror="this.src=\'https://via.placeholder.com/400x250?text=画像読込エラー\'"><div class="image-choice-label">' + label + '</div>'
-        : label + ': ' + choiceMap[label];
-      html +=
-        '<button class="' + buttonClass + '" ' +
-        'data-label="' + label + '" ' +
-        'onclick="' + onclick + '">' +
-        content +
-        '</button>';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'inputAnswer';
+    input.placeholder = '答えを入力してください';
+    input.className = 'answer-input';
 
+    const submitBtn = document.createElement('button');
+    submitBtn.id = 'submitBtn';
+    submitBtn.className = 'btn submit-btn';
+    submitBtn.textContent = '解答する';
+    submitBtn.addEventListener('click', submitInputAnswer);
+
+    choicesDiv.appendChild(input);
+    choicesDiv.appendChild(submitBtn);
+
+  } else {
+    const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
+    const gridDiv = document.createElement('div');
+    gridDiv.className = 'image-grid';
+
+    Object.keys(choiceMap).forEach(label => {
+      const value = choiceMap[label];
+      const button = document.createElement('button');
+      button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
+      button.dataset.label = label;
+      button.dataset.value = value;
+
+      if(isImage){
+        // 画像の場合は URL として扱い
+        button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
+                            <div class="image-choice-label">${label}</div>`;
+      } else {
+        // HTMLタグを含むテキストは DOMPurify でサニタイズ
+        const sanitizedHtml = DOMPurify.sanitize(value);
+        button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
+      }
+
+      if(isMultiple){
+        button.addEventListener('click', () => toggleChoiceByValue(value));
+      } else {
+        button.addEventListener('click', () => checkAnswerByValue(value));
+      }
+
+      gridDiv.appendChild(button);
     });
-    html += '</div>';
-    if(isMultiple) html += '<button id="submitBtn" class="btn submit-btn" onclick="submitMultipleAnswer()">解答する</button>';
-    choicesDiv.innerHTML = html;
+
+    choicesDiv.appendChild(gridDiv);
+
+    if(isMultiple){
+      const submitBtn = document.createElement('button');
+      submitBtn.id = 'submitBtn';
+      submitBtn.className = 'btn submit-btn';
+      submitBtn.textContent = '解答する';
+      submitBtn.addEventListener('click', submitMultipleAnswer);
+      choicesDiv.appendChild(submitBtn);
+    }
   }
 
   showScreen('questionScreen');
 }
 
 // 複数選択（順序を安定させる）
-function toggleChoice(choice){
-  if (answered) return;
+function toggleChoiceByValue(value){
+  if(answered) return;
 
-  const idx = selectedChoices.indexOf(choice);
-
-  if (idx > -1) {
-    // すでに選択されていたら外す
+  const idx = selectedChoices.indexOf(value);
+  if(idx > -1){
     selectedChoices.splice(idx, 1);
   } else {
-    // 選択されていなければ追加
-    selectedChoices.push(choice);
+    selectedChoices.push(value);
   }
 
-  // ★順序を常に A,B,C,D の順に揃える
-  const ORDER = ['A', 'B', 'C', 'D'];
-  selectedChoices.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+  updateChoiceButtonsByValue();
+}
 
-  updateChoiceButtons();
+function updateChoiceButtonsByValue(){
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    const value = btn.dataset.value;
+    btn.classList.toggle('selected', selectedChoices.includes(value));
+  });
 }
 
 function updateChoiceButtons(){
@@ -245,7 +276,7 @@ function submitMultipleAnswer(){
     .withFailureHandler(() => { answered = false; })
     .judgeAnswer({
       questionId: q.id,
-      answer: selectedChoices,
+      answer: selectedChoices, // label ではなく value 配列
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
@@ -255,7 +286,7 @@ function submitMultipleAnswer(){
 }
 
 // 単一選択
-function checkAnswer(label){
+function checkAnswerByValue(value){
   if(answered) return;
   answered = true;
 
@@ -277,12 +308,11 @@ function checkAnswer(label){
     })
     .judgeAnswer({
       questionId: q.id,
-      answer: label,
+      answer: value, // label ではなく value
       genre: currentGenre,
       level: levels[currentLevelIndex] 
     });
 }
-
 
 // 入力問題
 function submitInputAnswer(){
