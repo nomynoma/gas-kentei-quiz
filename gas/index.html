@@ -85,21 +85,22 @@
 
   <!-- 合格証明書画面 -->
   <div id="certificateScreen" class="screen">
-    <!-- 合格証明書エリア（生成した画像を表示） -->
+    <!-- 合格証明書エリア（生成した画像を表示・クリックで別窓） -->
     <div id="certificateArea" class="certificate-area">
-      <img id="certificateDisplayImage" src="" alt="合格証明書" class="certificate-display-image">
+      <img id="certificateDisplayImage" 
+          src="" 
+          alt="合格証明書" 
+          class="certificate-display-image"
+          onclick="openCertificateInNewWindow()" 
+          style="cursor: pointer;"
+          title="クリックで別窓表示">
     </div>
     <!-- ボタンエリア -->
     <div class="button-area">
+      <button class="btn btn-green" onclick="downloadCertificate()">合格証をダウンロード</button>
       <button class="btn btn-twitter" onclick="shareToX()">𝕏 で共有する</button>
       <button class="btn" id="certificateNextBtn" onclick="nextSection()">次のレベルへ</button>
       <button class="btn" id="certificateRestartBtn" onclick="restartQuiz()">最初からときなおす</button>
-      <!-- 合格証URL -->
-      <div id="certificateUrlArea" class="certificate-url-area">
-        <p id="certificateUrlLabel" class="certificate-url-label">⏳ 合格証URL準備中…</p>
-        <a id="certificateUrl" href="#" target="_blank" class="certificate-url-link"></a>
-        <button class="btn btn-green hidden" id="certificateUrlCopyBtn" onclick="copyCertificateUrl()">URLをコピー</button>
-      </div>
     </div>
   </div>
 

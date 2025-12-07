@@ -586,7 +586,7 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
     '</div>';
   document.getElementById('choices').innerHTML = '';
   document.getElementById('navigation').innerHTML = '';
-  showScreen('questionScreen'); // 問題画面エリアを使ってローディング表示
+  showScreen('questionScreen');
 
   // キャプチャ用エリアに設定
   document.getElementById('captureImage').src = imageUrl;
@@ -595,7 +595,6 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
   // 背景画像の読み込みを待つ
   const captureImg = document.getElementById('captureImage');
   captureImg.onload = function() {
-    // 画像読み込み完了後、少し待ってからhtml2canvasで生成
     setTimeout(() => {
       generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml);
     }, 100);
@@ -609,7 +608,7 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
   }
 }
 
-// 合格証画像を生成してスプレッドシートに保存後、合格証画面を表示
+// 合格証画像を生成してlocalStorageに保存後、合格証画面を表示
 function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml){
   const captureArea = document.getElementById('captureArea');
 
@@ -624,44 +623,27 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
     // canvasをBase64形式に変換（JPEG形式で圧縮して軽量化）
     const imageDataBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-    // スプレッドシートに保存（サーバー側でハッシュ生成）
-    google.script.run
-      .withSuccessHandler(function(result){
-        console.log('合格証画像を保存しました。UUID: ' + result.uuid);
-        // 保存完了後に合格証画面を表示（生成した画像を渡す）
-        showCertificateScreen(levelName, imageDataBase64, certificateTextHtml, result.uuid);
-      })
-      .withFailureHandler(function(error){
-        console.error('画像保存エラー:', error);
-        // エラーでも画像は表示
-        showCertificateScreen(levelName, imageDataBase64, certificateTextHtml, null);
-      })
-      .saveCertificateData({
-        genre: currentGenre,
-        level: levelName,
-        nickname: nickname,
-        date: dateStr,
-        imageData: imageDataBase64
-      });
+    // localStorageに保存
+    const storageKey = currentGenre + '_' + levelName;
+    try {
+      localStorage.setItem(storageKey, imageDataBase64);
+      console.log('合格証画像をlocalStorageに保存しました。Key: ' + storageKey);
+    } catch(error) {
+      console.error('localStorage保存エラー:', error);
+      alert('合格証の保存に失敗しました。ブラウザのストレージ容量を確認してください。');
+    }
+
+    // 保存完了後に合格証画面を表示
+    showCertificateScreen(levelName, imageDataBase64);
+    
   }).catch(error => {
     console.error('html2canvasエラー:', error);
-    // エラー時は背景画像URLのみで表示（fallback）
-    const fallbackImg = new Image();
-    fallbackImg.crossOrigin = 'anonymous';
-    fallbackImg.src = imageUrl;
-    fallbackImg.onload = function() {
-      const fallbackCanvas = document.createElement('canvas');
-      fallbackCanvas.width = 800;
-      fallbackCanvas.height = 565;
-      const ctx = fallbackCanvas.getContext('2d');
-      ctx.drawImage(fallbackImg, 0, 0, 800, 565);
-      showCertificateScreen(levelName, fallbackCanvas.toDataURL('image/jpeg', 0.8), certificateTextHtml, null);
-    };
+    alert('合格証の生成に失敗しました。');
   });
 }
 
 // 合格証画面を表示（生成した画像を使用）
-function showCertificateScreen(levelName, imageDataBase64, certificateTextHtml, uuid){
+function showCertificateScreen(levelName, imageDataBase64){
   // 生成した画像を表示
   document.getElementById('certificateDisplayImage').src = imageDataBase64;
 
@@ -678,17 +660,71 @@ function showCertificateScreen(levelName, imageDataBase64, certificateTextHtml, 
 
   // 合格証画面を表示
   showScreen('certificateScreen');
+}
 
-  // UUIDがある場合はURLを表示
-  if(uuid){
-    displayCertificateUrl(uuid);
-  } else {
-    // エラー時は準備中のまま
-    document.getElementById('certificateUrlArea').style.display = 'block';
-    document.getElementById('certificateUrlLabel').textContent = '⚠️ 合格証URLの生成に失敗しました';
-    document.getElementById('certificateUrl').style.display = 'none';
-    document.getElementById('certificateUrlCopyBtn').style.display = 'none';
-  }
+// 合格証画像をダウンロード
+function downloadCertificate(){
+  const img = document.getElementById('certificateDisplayImage');
+  const link = document.createElement('a');
+  link.href = img.src;
+  link.download = currentGenre + '_' + levels[currentLevelIndex] + '_合格証.jpg';
+  link.click();
+}
+
+// 合格証を別窓で開く
+function openCertificateInNewWindow(){
+  const img = document.getElementById('certificateDisplayImage');
+  window.open(img.src, '_blank');
+}
+
+// ジャンルボタンを動的に生成（合格証バッジ付き）
+function initializeGenreButtons() {
+  const genreButtonsDiv = document.getElementById('genreButtons');
+  if (!genreButtonsDiv || !GENRE_NAMES) return;
+
+  genreButtonsDiv.innerHTML = '';
+  GENRE_NAMES.forEach(genreName => {
+    const container = document.createElement('div');
+    container.className = 'genre-button-container';
+
+    const button = document.createElement('button');
+    button.className = 'btn';
+    button.textContent = genreName;
+    button.onclick = function() { selectGenre(genreName); };
+    container.appendChild(button);
+
+    // 合格証バッジを表示
+    const badgesDiv = document.createElement('div');
+    badgesDiv.className = 'certificate-badges';
+    
+    levels.forEach((levelName, index) => {
+      const storageKey = genreName + '_' + levelName;
+      const certificateData = localStorage.getItem(storageKey);
+      
+      if(certificateData) {
+        const badge = document.createElement('span');
+        badge.className = 'certificate-badge';
+        
+        // 絵文字で表示（初級：🥉、中級：🥈、上級：🥇）
+        const emoji = index === 0 ? '🥉' : index === 1 ? '🥈' : '🥇';
+        badge.textContent = emoji;
+        badge.title = levelName + '合格';
+        badge.onclick = function(e) {
+          e.stopPropagation();
+          openCertificateFromBadge(certificateData);
+        };
+        badgesDiv.appendChild(badge);
+      }
+    });
+    
+    container.appendChild(badgesDiv);
+    genreButtonsDiv.appendChild(container);
+  });
+}
+
+// バッジから合格証を別窓で開く
+function openCertificateFromBadge(certificateData) {
+  window.open(certificateData, '_blank');
 }
 
 // Xで共有（合格時）
@@ -708,44 +744,6 @@ function shareFailToX(){
   const url = window.location.origin + window.location.pathname;
   const twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
   window.open(twitterUrl, '_blank', 'width=550,height=420');
-}
-
-// 合格証URLを表示
-function displayCertificateUrl(hash){
-  // 合格証ページのURLを生成（CERTIFICATE_BASE_URLを使用）
-  const certificateUrl = CERTIFICATE_BASE_URL + '?g=' + hash;
-
-  // ラベルを更新
-  document.getElementById('certificateUrlLabel').textContent = '🔗 合格証URL（別窓で開けます）';
-
-  // URLとボタンを表示
-  document.getElementById('certificateUrl').href = certificateUrl;
-  document.getElementById('certificateUrl').textContent = certificateUrl;
-  document.getElementById('certificateUrl').style.display = 'block';
-  document.getElementById('certificateUrlCopyBtn').style.display = 'inline-block';
-  document.getElementById('certificateUrlArea').style.display = 'block';
-
-  // グローバル変数に保存（コピー用）
-  window.currentCertificateUrl = certificateUrl;
-}
-
-// 合格証URLをコピー
-function copyCertificateUrl(){
-  if(window.currentCertificateUrl){
-    navigator.clipboard.writeText(window.currentCertificateUrl).then(() => {
-      alert('URLをコピーしました！');
-    }).catch(err => {
-      console.error('コピー失敗:', err);
-      // フォールバック：テキストエリアを使う方法
-      const textarea = document.createElement('textarea');
-      textarea.value = window.currentCertificateUrl;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      alert('URLをコピーしました！');
-    });
-  }
 }
 
 // レベルをやり直す
