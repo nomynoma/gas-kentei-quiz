@@ -86,24 +86,24 @@ function getQuestions(genreName, level) {
         choiceD: row[8] || ''
       };
 
-      selectedQuestions.push(q);
-    }
+      // 入力問題以外は選択肢をシャッフル（正解情報なし）
+      if (q.selectionType !== 'input') {
+        var choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD];
 
-    // 入力問題以外は選択肢をシャッフル（正解情報なし）
-    if (q.selectionType !== 'input') {
-      var choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD];
+        for (var k = choices.length - 1; k > 0; k--) {
+          var l = Math.floor(Math.random() * (k + 1));
+          var tmp = choices[k];
+          choices[k] = choices[l];
+          choices[l] = tmp;
+        }
 
-      for (var k = choices.length - 1; k > 0; k--) {
-        var l = Math.floor(Math.random() * (k + 1));
-        var tmp = choices[k];
-        choices[k] = choices[l];
-        choices[l] = tmp;
+        q.choiceA = choices[0];
+        q.choiceB = choices[1];
+        q.choiceC = choices[2];
+        q.choiceD = choices[3];
       }
 
-      q.choiceA = choices[0];
-      q.choiceB = choices[1];
-      q.choiceC = choices[2];
-      q.choiceD = choices[3];
+      selectedQuestions.push(q);
     }
 
     Logger.log('問題取得完了（10問）');
@@ -326,7 +326,24 @@ function reloadQuestionCache() {
         var id = data[r][0];
         var ans = data[r][9];
         if (id && ans !== '') {
-          answerMap[id] = ans.toString().trim().toUpperCase();
+          var selectionType = data[r][2];
+          var correctLabels = ans.toString().trim().toUpperCase().split(',');
+
+          if (selectionType !== 'input') {
+            var labelToText = {
+              A: data[r][5],
+              B: data[r][6],
+              C: data[r][7],
+              D: data[r][8]
+            };
+
+            answerMap[id] = correctLabels.map(function(l) {
+              return labelToText[l];
+            });
+          } else {
+            // 入力問題はそのまま
+            answerMap[id] = ans.toString().trim().toUpperCase();
+          }
         }
       }
 
@@ -403,6 +420,14 @@ function clearQuestionCache() {
  * @return {boolean} return.correct true:正解 / false:不正解
  */
 function judgeAnswer(payload) {
+
+  function normalize(v) {
+    return v
+      .toString()
+      .trim()
+      .toUpperCase();
+  }
+
   var cache = CacheService.getScriptCache();
 
   if (!payload || !payload.questionId || !payload.genre) {
@@ -425,19 +450,31 @@ function judgeAnswer(payload) {
 
   // ===== 複数選択 =====
   if (Array.isArray(userAnswer)) {
-    var correctArr = correctAnswer.split(',').map(a => a.trim());
+    var correctTexts = correctAnswer; // ["大阪","名古屋"]
+
+    var userSet = userAnswer.map(normalize).sort();
+    var correctSet = correctTexts.map(normalize).sort();
+
     var isCorrect =
-      userAnswer.length === correctArr.length &&
-      userAnswer.every(a => correctArr.includes(a));
+      userSet.length === correctSet.length &&
+      userSet.every((v, i) => v === correctSet[i]);
+
     return { correct: isCorrect };
   }
 
-  // ===== 単一選択 / 入力 =====
+// ===== 単一選択 =====
+if (typeof correctAnswer === 'object') {
   return {
     correct:
-      userAnswer
-        .toString()
-        .trim()
-        .toUpperCase() === correctAnswer
+      userAnswer.toString().trim() === correctAnswer[0]
   };
+}
+
+// ===== 入力問題 =====
+return {
+  correct:
+    userAnswer.toString().trim().toUpperCase() ===
+    correctAnswer.toString().trim().toUpperCase()
+};
+
 }
