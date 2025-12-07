@@ -353,8 +353,6 @@ function clearQuestionCache() {
  *   { correct: boolean }
  */
 function judgeAnswer(payload) {
-  var cache = CacheService.getScriptCache();
-
   function normalize(v) {
     return v
       .toString()
@@ -362,8 +360,12 @@ function judgeAnswer(payload) {
       .toUpperCase();
   }
 
+  Logger.log('judgeAnswer payload: %s', JSON.stringify(payload));
+
+  var cache = CacheService.getScriptCache();
+
   // ✅ レベル別 正解キャッシュ
-  var cacheKey = 'a_' + payload.genre + '_' + payload.level;
+  var cacheKey = 'a_' + payload.genre + '_' + payload.level;  // レベル情報を含める
   var answerMap = JSON.parse(cache.get(cacheKey) || '{}');
 
   var correctAnswer = answerMap[payload.questionId];
