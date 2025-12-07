@@ -15,7 +15,7 @@ body {
 .container {
   background: white;
   border-radius: 15px;
-  padding: 40px;
+  padding: 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   width: 90%;
   max-width: 400px;
@@ -601,7 +601,6 @@ h1 {
 @media (min-width: 600px) {
   .container {
     max-width: 600px;
-    padding: 50px;
   }
 
   body {
@@ -616,10 +615,6 @@ h1 {
   .question-text {
     font-size: 18px;
     margin-bottom: 20px;
-  }
-
-  .container {
-    padding: 20px;
   }
 
   .btn {
