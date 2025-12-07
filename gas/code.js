@@ -25,13 +25,8 @@ function getQuestions(genreName, level) {
     var startTime = new Date().getTime();
     Logger.log('開始: genreName=' + genreName + ', level=' + level);
 
-    // スプレッドシート取得（デフォルト: このスクリプトが紐付いているスプレッドシート）
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    // カスタム: 別のスプレッドシートを使う場合は下記のコメントを外してIDを指定
-    // var SPREADSHEET_ID = '1Xycd1Wtq0ZNiQyhEIscRKndbyEeYt0H26wih9OXDJr8';
-    // var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-    // キャッシュから取得を試みる（6時間有効）
     var cache = CacheService.getScriptCache();
     var cacheKey = 'sheet_' + genreName;
     var cachedData = cache.get(cacheKey);
@@ -40,31 +35,20 @@ function getQuestions(genreName, level) {
     if (cachedData) {
       Logger.log('キャッシュヒット: ' + genreName);
       data = JSON.parse(cachedData);
-      var cacheTime = new Date().getTime();
-      Logger.log('キャッシュ読み込み完了: ' + (cacheTime - startTime) + 'ms');
     } else {
       Logger.log('キャッシュミス: スプレッドシートから読み込み');
       var sheet = ss.getSheetByName(genreName);
-      var sheetTime = new Date().getTime();
-      Logger.log('シート取得完了: ' + (sheetTime - startTime) + 'ms');
       if (!sheet) throw new Error(genreName + 'シートが見つかりません');
 
       data = sheet.getDataRange().getValues();
-      var dataTime = new Date().getTime();
-      Logger.log('データ読み込み完了: ' + (dataTime - sheetTime) + 'ms (全' + data.length + '行)');
-
-      // キャッシュに保存（6時間 = 21600秒）
       try {
         cache.put(cacheKey, JSON.stringify(data), 21600);
-        Logger.log('キャッシュに保存完了');
       } catch (e) {
-        Logger.log('キャッシュ保存エラー（サイズ超過の可能性）: ' + e);
+        Logger.log('キャッシュ保存エラー: ' + e);
       }
     }
 
-    var dataTime = new Date().getTime();
-
-    // 該当レベルの行インデックスのみを収集（軽量）
+    // 該当レベルの行インデックスを収集
     var matchingRowIndices = [];
     for (var i = 1; i < data.length; i++) {
       if (data[i][1] === level && data[i][4]) {
@@ -72,30 +56,26 @@ function getQuestions(genreName, level) {
       }
     }
 
-    // 問題数チェック
     if (matchingRowIndices.length < 10) {
-      throw new Error(genreName + 'の' + level + 'は問題が10問未満です（現在' + matchingRowIndices.length + '問）');
+      throw new Error(genreName + 'の' + level + 'は問題が10問未満です');
     }
 
-    // Fisher-Yatesシャッフルでインデックスをランダム化
+    // インデックスをシャッフル
     for (var i = matchingRowIndices.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
-      var temp = matchingRowIndices[i];
+      var tmp = matchingRowIndices[i];
       matchingRowIndices[i] = matchingRowIndices[j];
-      matchingRowIndices[j] = temp;
+      matchingRowIndices[j] = tmp;
     }
 
-    // 最初の10問だけを処理
     var selectedQuestions = [];
     for (var i = 0; i < 10; i++) {
-      var rowIndex = matchingRowIndices[i];
-      var row = data[rowIndex];
+      var row = data[matchingRowIndices[i]];
 
       var selectionType = (row[2] || 'single').toString().trim().toLowerCase();
-      var answerValue = (row[9] || '').toString().trim();
 
       var q = {
-        id: row[0],          // ← script.js から使う
+        id: row[0],
         level: row[1] || '',
         selectionType: selectionType,
         displayType: (row[3] || 'text').toString().trim().toLowerCase(),
@@ -106,23 +86,13 @@ function getQuestions(genreName, level) {
         choiceD: row[8] || ''
       };
 
-      // 入力問題の場合は選択肢シャッフルをスキップ
-      if (q.selectionType === 'input') {
-        selectedQuestions.push(q);
-        continue;
-      }
+      selectedQuestions.push(q);
+    }
 
-      // 選択問題の場合は選択肢をシャッフル
-      var choices = [
-        { label: 'A', text: q.choiceA },
-        { label: 'B', text: q.choiceB },
-        { label: 'C', text: q.choiceC },
-        { label: 'D', text: q.choiceD }
-      ];
+    // 入力問題以外は選択肢をシャッフル（正解情報なし）
+    if (q.selectionType !== 'input') {
+      var choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD];
 
-      var originalCorrectLabels = q.answer.split(',').map(function(a) { return a.trim().toUpperCase(); });
-
-      // 選択肢をシャッフル
       for (var k = choices.length - 1; k > 0; k--) {
         var l = Math.floor(Math.random() * (k + 1));
         var tmp = choices[k];
@@ -130,29 +100,13 @@ function getQuestions(genreName, level) {
         choices[l] = tmp;
       }
 
-      // シャッフル後の正解ラベルを更新
-      var newAnswer = [];
-      for (var idx = 0; idx < choices.length; idx++) {
-        var originalLabel = ['A','B','C','D'][idx];
-        if (originalCorrectLabels.indexOf(choices[idx].label) !== -1) {
-          newAnswer.push(originalLabel);
-        }
-      }
-
-      // 選択肢テキストを更新
-      q.choiceA = choices[0].text;
-      q.choiceB = choices[1].text;
-      q.choiceC = choices[2].text;
-      q.choiceD = choices[3].text;
-      q.answer = newAnswer.join(',');
-
-      selectedQuestions.push(q);
+      q.choiceA = choices[0];
+      q.choiceB = choices[1];
+      q.choiceC = choices[2];
+      q.choiceD = choices[3];
     }
 
-    var endTime = new Date().getTime();
-    Logger.log('問題処理完了: ' + (endTime - dataTime) + 'ms');
-    Logger.log('合計処理時間: ' + (endTime - startTime) + 'ms');
-
+    Logger.log('問題取得完了（10問）');
     return selectedQuestions;
 
   } catch (error) {
