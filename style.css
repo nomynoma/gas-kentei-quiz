@@ -99,9 +99,10 @@ h1 {
 /* ナビゲーションボタン */
 .btn-nav-small {
   display: inline-block;
-  min-width: 100px;
+  min-width: auto;
+  width: auto;
   margin: 0;
-  padding: 10px 15px;
+  padding: 10px 20px;
   font-size: 15px;
 }
 
@@ -661,9 +662,24 @@ h1 {
   .progress-dot {
     width: 24px;
     height: 24px;
+    float: left;  /* 追加 */
   }
 
   .progress-dots {
     gap: 6px;
+    max-width: 100%;
+    justify-content: flex-start;  /* 追加 */
+  }
+
+  /* モバイルで5個ずつ折り返し */
+  .progress-dot:nth-child(5n + 1) {
+    clear: left;  /* 変更: margin-left: 0; から変更 */
+  }
+  
+  /* floatをクリアするため */
+  .progress-dots::after {  /* 追加 */
+    content: "";
+    display: table;
+    clear: both;
   }
 }
