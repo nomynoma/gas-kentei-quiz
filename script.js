@@ -634,7 +634,7 @@ function showCertificateScreen(levelName, imageDataBase64){
   const certLink = document.getElementById('certificateLink');
   
   certImg.src = imageDataBase64;
-  certLink.href = imageDataBase64;  // data:image/jpeg;base64,... をhrefに設定
+  certLink.href = base64ToBlobUrl(imageDataBase64);  // data:image/jpeg;base64,... のBlobURLをhrefに設定
 
   // ボタンの表示制御
   if(currentLevelIndex < levels.length - 1){
@@ -693,7 +693,7 @@ function initializeGenreButtons() {
       if(certificateData) {
         // <a>タグでリンクを作成
         const badgeLink = document.createElement('a');
-        badgeLink.href = certificateData;
+        badgeLink.href = base64ToBlobUrl(certificateData);
         badgeLink.target = '_blank';
         badgeLink.className = 'certificate-badge';
         badgeLink.title = levelName + '合格証を別窓で開く';
@@ -770,4 +770,25 @@ function restartQuiz(){
   document.getElementById('preparingMessage').style.display = 'none';
 
   showScreen('nicknameScreen');
+}
+
+/**
+ * Base64(DataURL) を Blob URL に変換して返す
+ * @param {string} base64DataUrl - data:image/jpeg;base64,... 形式
+ * @returns {string} blob URL（hrefにそのまま使える）
+ */
+function base64ToBlobUrl(base64DataUrl) {
+  const [meta, base64] = base64DataUrl.split(',');
+  const mime = meta.match(/data:(.*?);base64/)[1];
+
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: mime });
+  return URL.createObjectURL(blob);
 }
