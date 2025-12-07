@@ -95,7 +95,7 @@ function getQuestions(genreName, level) {
       var answerValue = (row[9] || '').toString().trim();
 
       var q = {
-        number: row[0] || rowIndex,
+        id: row[0],          // ← script.js から使う
         level: row[1] || '',
         selectionType: selectionType,
         displayType: (row[3] || 'text').toString().trim().toLowerCase(),
@@ -103,8 +103,7 @@ function getQuestions(genreName, level) {
         choiceA: row[5] || '',
         choiceB: row[6] || '',
         choiceC: row[7] || '',
-        choiceD: row[8] || '',
-        answer: selectionType === 'input' ? answerValue : answerValue.toUpperCase()
+        choiceD: row[8] || ''
       };
 
       // 入力問題の場合は選択肢シャッフルをスキップ
@@ -417,4 +416,77 @@ function clearQuestionCache() {
   );
 
   return '全ジャンルのキャッシュをクリアしました';
+}
+
+/**
+ * ユーザーの回答が正解かどうかを判定する
+ *
+ * クライアント（script.js）から送信された
+ * questionId と回答内容をもとに、
+ * スプレッドシート上の正解データと照合する。
+ *
+ * ・単一選択問題
+ * ・複数選択問題
+ * ・入力式問題
+ *
+ * すべてこの関数で共通判定する。
+ *
+ * @param {Object} payload 判定に必要な情報
+ * @param {string|number} payload.questionId 問題ID（1列目）
+ * @param {string|string[]} payload.answer ユーザーの回答
+ * @return {Object} 判定結果
+ * @return {boolean} return.correct true:正解 / false:不正解
+ */
+function judgeAnswer(payload){
+  var questionId = payload.questionId;
+  var userAnswer = payload.answer;
+
+  // アクティブなスプレッドシートを取得
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+
+  // 全シートを走査
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var data = sheet.getDataRange().getValues();
+
+    // 1行目はヘッダーなので 2行目以降を対象
+    for (var i = 1; i < data.length; i++) {
+
+      // 問題IDが一致する行を探す
+      if (data[i][0] === questionId) {
+
+        // 正解データ（大文字・前後空白除去）
+        var correctAnswer = data[i][9]
+          .toString()
+          .trim()
+          .toUpperCase();
+
+        // ===== 複数選択問題 =====
+        if (Array.isArray(userAnswer)) {
+          var correct = correctAnswer
+            .split(',')
+            .map(a => a.trim());
+
+          var isCorrect =
+            userAnswer.length === correct.length &&
+            userAnswer.every(a => correct.includes(a));
+
+          return { correct: isCorrect };
+        }
+
+        // ===== 単一選択 / 入力式問題 =====
+        return {
+          correct:
+            userAnswer
+              .toString()
+              .trim()
+              .toUpperCase() === correctAnswer
+        };
+      }
+    }
+  }
+
+  // 該当する問題IDが見つからなかった場合
+  return { correct: false };
 }

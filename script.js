@@ -199,45 +199,102 @@ function updateChoiceButtons(){
   });
 }
 
+// 複数選択
 function submitMultipleAnswer(){
   if(answered) return;
-  if(selectedChoices.length===0){ alert('少なくとも1つ選択してください'); return;}
+  if(selectedChoices.length === 0){
+    alert('少なくとも1つ選択してください');
+    return;
+  }
+
   answered = true;
   const q = questions[currentQuestion];
-  const correct = q.answer.split(',').map(a=>a.trim());
-  const isCorrect = selectedChoices.length === correct.length && selectedChoices.every(c=>correct.includes(c));
   const feedbackDiv = document.getElementById('feedback');
-  feedbackDiv.innerHTML = isCorrect ?
-    '<div class="result correct">✓ 正解！</div><button class="btn" onclick="nextQuestion()">次へ</button>' :
-    '<div class="result incorrect">✗ 不正解！正解は ' + correct.join(', ') + ' です</div><button class="btn" onclick="nextQuestion()">次へ</button>';
-  const submitBtn = document.getElementById('submitBtn'); if(submitBtn) submitBtn.style.display='none';
-  if(isCorrect) score++;
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if(result.correct){
+        score++;
+        feedbackDiv.innerHTML =
+          '<div class="result correct">✓ 正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      } else {
+        feedbackDiv.innerHTML =
+          '<div class="result incorrect">✗ 不正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      }
+    })
+    .judgeAnswer({
+      questionId: q.id,
+      answer: selectedChoices
+    });
+
+  const submitBtn = document.getElementById('submitBtn');
+  if(submitBtn) submitBtn.style.display = 'none';
 }
 
 // 単一選択
 function checkAnswer(label){
   if(answered) return;
   answered = true;
+
   const q = questions[currentQuestion];
   const feedbackDiv = document.getElementById('feedback');
-  if(q.answer.split(',').includes(label)){ score++; feedbackDiv.innerHTML='<div class="result correct">✓ 正解！</div><button class="btn" onclick="nextQuestion()">次へ</button>';}
-  else{ feedbackDiv.innerHTML='<div class="result incorrect">✗ 不正解！正解は ' + q.answer + ' です</div><button class="btn" onclick="nextQuestion()">次へ</button>';}
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if(result.correct){
+        score++;
+        feedbackDiv.innerHTML =
+          '<div class="result correct">✓ 正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      } else {
+        feedbackDiv.innerHTML =
+          '<div class="result incorrect">✗ 不正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      }
+    })
+    .judgeAnswer({
+      questionId: q.id,
+      answer: label
+    });
 }
+
 
 // 入力問題
 function submitInputAnswer(){
   if(answered) return;
+
   const input = document.getElementById('inputAnswer').value.trim();
-  if(input === ''){ alert('答えを入力してください'); return;}
+  if(input === ''){
+    alert('答えを入力してください');
+    return;
+  }
+
   answered = true;
   const q = questions[currentQuestion];
   const feedbackDiv = document.getElementById('feedback');
-  const isCorrect = input === q.answer;
-  feedbackDiv.innerHTML = isCorrect ?
-    '<div class="result correct">✓ 正解！</div><button class="btn" onclick="nextQuestion()">次へ</button>' :
-    '<div class="result incorrect">✗ 不正解！正解は ' + q.answer + ' です</div><button class="btn" onclick="nextQuestion()">次へ</button>';
-  const submitBtn = document.getElementById('submitBtn'); if(submitBtn) submitBtn.style.display='none';
-  if(isCorrect) score++;
+
+  google.script.run
+    .withSuccessHandler(result => {
+      if(result.correct){
+        score++;
+        feedbackDiv.innerHTML =
+          '<div class="result correct">✓ 正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      } else {
+        feedbackDiv.innerHTML =
+          '<div class="result incorrect">✗ 不正解！</div>' +
+          '<button class="btn" onclick="nextQuestion()">次へ</button>';
+      }
+    })
+    .judgeAnswer({
+      questionId: q.id,
+      answer: input
+    });
+
+  const submitBtn = document.getElementById('submitBtn');
+  if(submitBtn) submitBtn.style.display = 'none';
 }
 
 function nextQuestion(){ currentQuestion++; showQuestion(); }
