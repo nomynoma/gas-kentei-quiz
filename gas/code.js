@@ -54,7 +54,7 @@ function getQuestions(genre, level) {
 
   var questions = JSON.parse(cached);
 
-  // シャッフル（Fisher–Yates）
+  // 問題順をシャッフル（Fisher–Yates）
   for (var i = questions.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
     var tmp = questions[i];
@@ -66,6 +66,46 @@ function getQuestions(genre, level) {
   var LIMIT = 10;
   if (questions.length > LIMIT) {
     questions = questions.slice(0, LIMIT);
+  }
+
+  // 各問題の選択肢をシャッフル（入力問題を除く）
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+
+    // 入力問題の場合はスキップ
+    if (q.selectionType === 'input') {
+      continue;
+    }
+
+    // 選択肢を配列に格納
+    var choices = [
+      q.choiceA || '',
+      q.choiceB || '',
+      q.choiceC || '',
+      q.choiceD || ''
+    ];
+
+    // 空の選択肢を除外
+    var validChoices = [];
+    for (var k = 0; k < choices.length; k++) {
+      if (choices[k]) {
+        validChoices.push(choices[k]);
+      }
+    }
+
+    // 選択肢をシャッフル（Fisher–Yates）
+    for (var k = validChoices.length - 1; k > 0; k--) {
+      var l = Math.floor(Math.random() * (k + 1));
+      var tmp = validChoices[k];
+      validChoices[k] = validChoices[l];
+      validChoices[l] = tmp;
+    }
+
+    // シャッフルした選択肢を再代入
+    q.choiceA = validChoices[0] || '';
+    q.choiceB = validChoices[1] || '';
+    q.choiceC = validChoices[2] || '';
+    q.choiceD = validChoices[3] || '';
   }
 
   return questions;
