@@ -22,13 +22,14 @@
 ## 目次
 
 1. [クイックスタート](#クイックスタート)
-2. [ホスティング先を変更する](#ホスティング先を変更する)
-3. [GASデプロイURLを変更する](#gasデプロイurlを変更する)
-4. [ジャンル名を変更する](#ジャンル名を変更する)
-5. [個別の画像URLをカスタマイズする](#個別の画像urlをカスタマイズする)
-6. [GoogleDrive共有リンクの使い方](#googledrive共有リンクの使い方)
-7. [キャッシュとパフォーマンス](#キャッシュとパフォーマンス)
-8. [トラブルシューティング](#トラブルシューティング)
+2. [デプロイ手順](#デプロイ手順)
+3. [ホスティング先を変更する](#ホスティング先を変更する)
+4. [GASデプロイURLを変更する](#gasデプロイurlを変更する)
+5. [ジャンル名を変更する](#ジャンル名を変更する)
+6. [個別の画像URLをカスタマイズする](#個別の画像urlをカスタマイズする)
+7. [GoogleDrive共有リンクの使い方](#googledrive共有リンクの使い方)
+8. [キャッシュとパフォーマンス](#キャッシュとパフォーマンス)
+9. [トラブルシューティング](#トラブルシューティング)
 
 ---
 
@@ -65,6 +66,62 @@ const HOSTING_BASE_URL = 'https://new-hosting.com';  // ← ここだけ変更
 ```
 
 これだけで、全ての画像URLが自動的に新しいホスティング先を参照します！
+
+---
+
+## デプロイ手順
+
+変更をデプロイする際は、**必ず以下の順序で実行**してください。
+
+### 📦 標準デプロイ手順
+
+```bash
+# 1. GitHubにプッシュ（GitHub Pagesにデプロイ）
+git add .
+git commit -m "設定更新"
+git push origin main
+
+# 2. GitHub Pagesの反映を待つ（通常1-2分）
+# ブラウザで https://nomynoma.github.io/gas-kentei-quiz/config.js にアクセスして確認
+
+# 3. GASにプッシュ（gas/ディレクトリをGASにアップロード）
+cd gas
+clasp push
+```
+
+### ⚠️ 重要：デプロイの順序
+
+**必ず GitHub → GAS の順番でデプロイしてください！**
+
+理由：
+- `gas/index.html` は GitHub Pages の `script.js` を読み込んでいる
+- 先に GitHub Pages にファイルがないと、GAS からアクセスできずエラーになる
+
+### 🚀 ワンライナーでデプロイ
+
+プロジェクトルートで以下を実行：
+
+```bash
+git add . && git commit -m "設定更新" && git push origin main && timeout /t 60 /nobreak && cd gas && clasp push && cd ..
+```
+
+**Windowsの場合（PowerShell）:**
+```powershell
+git add .; git commit -m "設定更新"; git push origin main; Start-Sleep -Seconds 60; cd gas; clasp push; cd ..
+```
+
+**Mac/Linuxの場合:**
+```bash
+git add . && git commit -m "設定更新" && git push origin main && sleep 60 && cd gas && clasp push && cd ..
+```
+
+※ `timeout /t 60` (Windows) / `sleep 60` (Mac/Linux) は、GitHub Pagesの反映を待つための60秒待機です
+
+### 📝 デプロイ後の確認
+
+1. ブラウザのキャッシュをクリア（`Ctrl+Shift+R` / `Cmd+Shift+R`）
+2. GASアプリを開いて動作確認
+3. ブラウザのコンソール（F12）でエラーがないか確認
 
 ---
 
