@@ -12,7 +12,7 @@ const HOSTING_BASE_URL = 'https://nomynoma.github.io/gas-kentei-quiz';
 
 // Google Apps Script デプロイURL
 // GASで「ウェブアプリとして導入」で取得したURLをここに設定
-const GAS_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwfhEmEVxN6cJfpBvC-ox4LStgfQxEkyZfvHEZtsHISzZj2Aa1MoMeMzlQNmCnko7ya/exec';
+const GAS_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbztUS7zsecQG169l3bWc5UJdkFiu1bGhpuZKop_V2Yief1YpKniYDUt8ydJ4bToT8br/exec';
 
 // ========================================
 // ジャンル設定

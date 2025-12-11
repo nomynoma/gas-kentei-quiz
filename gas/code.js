@@ -28,10 +28,12 @@ function getConfigFromGitHub() {
   var url = 'https://nomynoma.github.io/gas-kentei-quiz/config.js';
   try {
     var response = UrlFetchApp.fetch(url);
-    return response.getContentText();
+    var content = response.getContentText();
+    Logger.log('取得したコンテンツの最初の100文字: ' + content.substring(0, 100));
+    return content;
   } catch (e) {
     Logger.log('GitHub Pagesからconfig.jsの取得に失敗: ' + e);
-    return '// config.js取得失敗';
+    return '// config.js取得失敗: ' + e;
   }
 }
 

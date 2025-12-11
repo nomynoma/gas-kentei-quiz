@@ -69,6 +69,48 @@ const HOSTING_BASE_URL = 'https://new-hosting.com';  // ← ここだけ変更
 
 ---
 
+## 📖 仕組みの説明
+
+### config.js の読み込み方法
+
+このプロジェクトでは、**単一の `config.js` ファイル**をすべての場所から参照しています：
+
+#### 🌐 GitHub Pages（index.html）
+```html
+<script src="config.js"></script>
+```
+通常の JavaScript として読み込み
+
+#### ⚙️ GAS（gas/index.html）
+```html
+<script>
+<?!= getConfigFromGitHub(); ?>
+</script>
+```
+GAS が GitHub Pages の `config.js` を動的に取得して埋め込み
+
+### メリット
+✅ **単一の真実の情報源**: `config.js` を編集するだけでOK
+✅ **自動同期**: GitHub Pages にプッシュすれば、GAS も最新版を取得
+✅ **ファイル重複なし**: コピーやシンボリックリンク不要
+
+### 必要な権限
+
+GAS が GitHub Pages から `config.js` を取得するため、以下の権限が必要です：
+
+**`gas/appsscript.json`:**
+```json
+{
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/script.external_request"
+  ]
+}
+```
+
+この権限により、GAS が `UrlFetchApp.fetch()` で外部 URL にアクセスできます。
+
+---
+
 ## デプロイ手順
 
 変更をデプロイする際は、**必ず以下の順序で実行**してください。
