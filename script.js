@@ -174,11 +174,16 @@ function clearCertificatesFromStorage() {
   localStorage.removeItem(STORAGE_KEY_CERTIFICATES);
 }
 
-// ジャンル選択
-function selectGenre(genre){
+// ジャンルと難易度を指定して開始
+function selectGenreAndLevel(genre, levelIndex) {
   currentGenre = genre;
-  currentLevelIndex = 0;
+  currentLevelIndex = levelIndex;
   loadLevel(currentGenre, levels[currentLevelIndex]);
+}
+
+// 後方互換性のため残す（使用されていないが念のため）
+function selectGenre(genre){
+  selectGenreAndLevel(genre, 0);
 }
 
 // --- レベル別問題読み込み ---
@@ -715,20 +720,24 @@ function showCertificateScreen(levelName, imageDataBase64){
   // 生成した画像を表示
   const certImg = document.getElementById('certificateDisplayImage');
   const certLink = document.getElementById('certificateLink');
-  
+
   certImg.src = imageDataBase64;
   certLink.href = base64ToBlobUrl(imageDataBase64);  // data:image/jpeg;base64,... のBlobURLをhrefに設定
 
   // ボタンの表示制御
+  const nextBtn = document.getElementById('certificateNextBtn');
+  const backBtn = document.getElementById('certificateBackBtn');
+
   if(currentLevelIndex < levels.length - 1){
     // 初級・中級：次のレベルへ進むボタンを表示
-    document.getElementById('certificateNextBtn').style.display = 'block';
-    document.getElementById('certificateRestartBtn').style.display = 'none';
+    nextBtn.style.display = 'block';
   } else {
-    // 上級：最初からときなおすボタンのみ表示
-    document.getElementById('certificateNextBtn').style.display = 'none';
-    document.getElementById('certificateRestartBtn').style.display = 'block';
+    // 上級：次のレベルへボタンを非表示
+    nextBtn.style.display = 'none';
   }
+
+  // ジャンル選択へ戻るボタンは常に表示
+  backBtn.style.display = 'block';
 
   // 合格証画面を表示
   showScreen('certificateScreen');
@@ -749,53 +758,87 @@ function openCertificateInNewWindow(){
   window.open(img.src, '_blank');
 }
 
-// ジャンルボタンを動的に生成（合格証バッジ付き）
+// 難易度の解放状態を判定
+function isDifficultyUnlocked(genreName, levelIndex) {
+  if (levelIndex === 0) return true; // 初級は常に解放
+
+  const previousLevel = levels[levelIndex - 1];
+  const storageKey = genreName + '_' + previousLevel;
+  return localStorage.getItem(storageKey) !== null;
+}
+
+// ジャンルボタンを動的に生成（難易度選択システム）
 function initializeGenreButtons() {
   const genreButtonsDiv = document.getElementById('genreButtons');
   if (!genreButtonsDiv || !GENRE_NAMES) return;
 
   genreButtonsDiv.innerHTML = '';
+
   GENRE_NAMES.forEach(genreName => {
-    const container = document.createElement('div');
-    container.className = 'genre-button-container';
+    // ジャンルコンテナ（枠線付き）
+    const genreContainer = document.createElement('div');
+    genreContainer.className = 'genre-container';
 
-    const button = document.createElement('button');
-    button.className = 'btn';
-    button.textContent = genreName;
-    button.onclick = function() { selectGenre(genreName); };
-    container.appendChild(button);
+    // ジャンル名タイトル
+    const genreTitle = document.createElement('div');
+    genreTitle.className = 'genre-title';
+    genreTitle.textContent = genreName;
+    genreContainer.appendChild(genreTitle);
 
-    // 合格証バッジを表示
-    const badgesDiv = document.createElement('div');
-    badgesDiv.className = 'certificate-badges';
-    
-    levels.forEach((levelName, index) => {
+    // 難易度ボタンコンテナ
+    const difficultyContainer = document.createElement('div');
+    difficultyContainer.className = 'difficulty-container';
+
+    levels.forEach((levelName, levelIndex) => {
+      // 難易度ボタンとメダルのラッパー
+      const difficultyWrapper = document.createElement('div');
+      difficultyWrapper.className = 'difficulty-wrapper';
+
+      // 難易度ボタン
+      const difficultyBtn = document.createElement('button');
+      difficultyBtn.className = 'btn difficulty-btn';
+      difficultyBtn.textContent = levelName;
+
+      // 解放状態をチェック
+      const isUnlocked = isDifficultyUnlocked(genreName, levelIndex);
+
+      if (isUnlocked) {
+        difficultyBtn.onclick = function() {
+          selectGenreAndLevel(genreName, levelIndex);
+        };
+      } else {
+        difficultyBtn.disabled = true;
+        difficultyBtn.classList.add('locked');
+      }
+
+      difficultyWrapper.appendChild(difficultyBtn);
+
+      // 合格証バッジ（メダル）
       const storageKey = genreName + '_' + levelName;
       const certificateData = localStorage.getItem(storageKey);
-      
-      if(certificateData) {
-        // <a>タグでリンクを作成
+
+      if (certificateData) {
         const badgeLink = document.createElement('a');
         badgeLink.href = base64ToBlobUrl(certificateData);
         badgeLink.target = '_blank';
-        badgeLink.className = 'certificate-badge';
+        badgeLink.className = 'certificate-medal';
         badgeLink.title = levelName + '合格証を別窓で開く';
-        
-        // 絵文字で表示（初級：🥉、中級：🥈、上級：🥇）
-        const emoji = index === 0 ? '🥉' : index === 1 ? '🥈' : '🥇';
+
+        const emoji = levelIndex === 0 ? '🥉' : levelIndex === 1 ? '🥈' : '🥇';
         badgeLink.textContent = emoji;
-        
-        // ジャンルボタンのクリックイベントを防ぐ
+
         badgeLink.onclick = function(e) {
           e.stopPropagation();
         };
-        
-        badgesDiv.appendChild(badgeLink);
+
+        difficultyWrapper.appendChild(badgeLink);
       }
+
+      difficultyContainer.appendChild(difficultyWrapper);
     });
-    
-    container.appendChild(badgesDiv);
-    genreButtonsDiv.appendChild(container);
+
+    genreContainer.appendChild(difficultyContainer);
+    genreButtonsDiv.appendChild(genreContainer);
   });
 }
 
@@ -835,6 +878,13 @@ function nextSection(){
       loadLevel(currentGenre, levels[currentLevelIndex]);
     }
   });
+}
+
+// ジャンル選択に戻る
+function backToGenreSelection() {
+  // ジャンルボタンを再生成（合格証バッジを更新）
+  initializeGenreButtons();
+  showScreen('genreScreen');
 }
 
 function restartQuiz(){

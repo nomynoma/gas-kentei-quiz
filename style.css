@@ -713,3 +713,107 @@ h1 {
 .nickname-warning.hidden {
   display: none;
 }
+
+/* ========================================
+   難易度選択システムのスタイル
+   ======================================== */
+
+/* ジャンルコンテナ（枠線付き） */
+.genre-container {
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* ジャンル名タイトル */
+.genre-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* 難易度ボタンコンテナ */
+.difficulty-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 難易度ボタンとメダルのラッパー */
+.difficulty-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 難易度ボタン */
+.difficulty-btn {
+  min-width: 80px;
+  padding: 10px 15px;
+  font-size: 16px;
+  margin: 0;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.difficulty-btn:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+}
+
+/* 非活性（ロック）状態 */
+.difficulty-btn.locked,
+.difficulty-btn:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* 合格証メダル（難易度ボタンの右側） */
+.certificate-medal {
+  display: inline-block;
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  text-decoration: none;
+  margin-left: 5px;
+}
+
+.certificate-medal:hover {
+  transform: scale(1.3);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .difficulty-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .difficulty-wrapper {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .difficulty-btn {
+    flex: 1;
+    min-width: 100px;
+  }
+}
