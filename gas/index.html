@@ -142,9 +142,9 @@
 </div>
 
 <!-- 外部JavaScriptファイル読み込み -->
-<!-- 設定ファイル（GAS内のconfig.jsを埋め込み） -->
+<!-- 設定ファイル（GitHub Pagesのconfig.jsを読み込み） -->
 <script>
-<?!= include('config'); ?>
+<?!= getConfigFromGitHub(); ?>
 </script>
 <!-- メインスクリプト（GitHub Pages） -->
 <script src="https://nomynoma.github.io/gas-kentei-quiz/script.js"></script>

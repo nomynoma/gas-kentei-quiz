@@ -22,6 +22,20 @@ function include(filename) {
 }
 
 /**
+ * GitHub Pagesからconfig.jsを取得
+ */
+function getConfigFromGitHub() {
+  var url = 'https://nomynoma.github.io/gas-kentei-quiz/config.js';
+  try {
+    var response = UrlFetchApp.fetch(url);
+    return response.getContentText();
+  } catch (e) {
+    Logger.log('GitHub Pagesからconfig.jsの取得に失敗: ' + e);
+    return '// config.js取得失敗';
+  }
+}
+
+/**
  * セクションごとの問題を取得（キャッシュ対応版）
  * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
  * @param {string} level - "初級", "中級", "上級"
