@@ -66,18 +66,27 @@ function showScreen(id){
 
 // ローカルストレージからニックネームを読み込み
 function loadNicknameFromStorage() {
-  const savedNickname = localStorage.getItem(STORAGE_KEY_NICKNAME);
-  if (savedNickname) {
-    nickname = savedNickname;
-    // ニックネーム入力画面をスキップしてジャンル選択画面へ
-    updateNicknameDisplay();
-    showScreen('genreScreen');
+  try {
+    const savedNickname = localStorage.getItem(STORAGE_KEY_NICKNAME);
+    if (savedNickname) {
+      nickname = savedNickname;
+      // ジャンルボタンを生成してから画面遷移
+      initializeGenreButtons();
+      updateNicknameDisplay();
+      showScreen('genreScreen');
+    }
+  } catch (e) {
+    console.error('ローカルストレージからの読み込みに失敗:', e);
   }
 }
 
 // ローカルストレージにニックネームを保存
 function saveNicknameToStorage(name) {
-  localStorage.setItem(STORAGE_KEY_NICKNAME, name);
+  try {
+    localStorage.setItem(STORAGE_KEY_NICKNAME, name);
+  } catch (e) {
+    console.error('ローカルストレージへの保存に失敗:', e);
+  }
 }
 
 // ジャンル選択画面のニックネーム表示を更新
@@ -154,6 +163,8 @@ function submitNickname(){
   setTimeout(() => {
     document.getElementById('nicknameForm').style.display = 'block';
     document.getElementById('preparingMessage').style.display = 'none';
+    // ジャンルボタンを生成してから画面遷移
+    initializeGenreButtons();
     showScreen('genreScreen');
   }, 300);
 }
@@ -161,7 +172,6 @@ function submitNickname(){
 // ローカルストレージから合格証データを削除
 function clearCertificatesFromStorage() {
   localStorage.removeItem(STORAGE_KEY_CERTIFICATES);
-  console.log('合格証データをリセットしました');
 }
 
 // ジャンル選択
