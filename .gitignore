@@ -2,6 +2,9 @@
 gas/.clasp.json
 gas/.claspignore
 
+# GAS用のシンボリックリンク（clasp pushで自動同期されるため不要）
+gas/config.js
+
 # Node.js
 node_modules/
 

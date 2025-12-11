@@ -15,6 +15,13 @@ function doGet(e) {
 }
 
 /**
+ * HTMLファイルに他のファイルを埋め込むためのヘルパー関数
+ */
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
  * セクションごとの問題を取得（キャッシュ対応版）
  * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
  * @param {string} level - "初級", "中級", "上級"
