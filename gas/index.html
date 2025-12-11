@@ -22,6 +22,10 @@
       <p class="description-text">
         合格証明書に表示するニックネームを入力してください
       </p>
+      <!-- 編集モード時の警告メッセージ -->
+      <div id="nicknameWarning" class="nickname-warning hidden">
+        ⚠️ 名前を変更すると合格証がリセットされます！
+      </div>
       <input type="text" id="nicknameInput" maxlength="10" placeholder="ニックネームを入力" class="text-input">
       <div id="nicknameError" class="error-text"></div>
       <button class="btn" onclick="submitNickname()">次へ</button>
@@ -36,6 +40,12 @@
 
   <!-- ジャンル選択画面 -->
   <div id="genreScreen" class="screen">
+    <!-- ニックネーム表示エリア（右上） -->
+    <div id="nicknameDisplay" class="nickname-display">
+      <span id="nicknameText">回答者：</span>
+      <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+    </div>
+
     <h1>📚 ジャンル選択</h1>
     <p class="description-text">
       挑戦したいジャンルを選んでください

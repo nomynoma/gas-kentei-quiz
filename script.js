@@ -17,6 +17,11 @@ let currentQuestion = 0;
 let score = 0;
 let selectedChoices = []; // 現在の問題で選択中の選択肢
 let userAnswers = []; // 全問題の回答を保存 [{questionId, answer}, ...]
+let isEditingNickname = false; // ニックネーム編集モードかどうか
+
+// ローカルストレージのキー
+const STORAGE_KEY_NICKNAME = 'quiz_nickname';
+const STORAGE_KEY_CERTIFICATES = 'quiz_certificates';
 
 // 初期化：画像URLとジャンルボタンを動的に設定
 function initializeApp() {
@@ -40,6 +45,9 @@ function initializeApp() {
 
   // ジャンルボタンを動的に生成
   initializeGenreButtons();
+
+  // ローカルストレージからニックネームを読み込み
+  loadNicknameFromStorage();
 }
 
 // ページ読み込み時に初期化を実行
@@ -54,6 +62,47 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el = document.getElementById(id);
   if(el) el.classList.add('active');
+}
+
+// ローカルストレージからニックネームを読み込み
+function loadNicknameFromStorage() {
+  const savedNickname = localStorage.getItem(STORAGE_KEY_NICKNAME);
+  if (savedNickname) {
+    nickname = savedNickname;
+    // ニックネーム入力画面をスキップしてジャンル選択画面へ
+    updateNicknameDisplay();
+    showScreen('genreScreen');
+  }
+}
+
+// ローカルストレージにニックネームを保存
+function saveNicknameToStorage(name) {
+  localStorage.setItem(STORAGE_KEY_NICKNAME, name);
+}
+
+// ジャンル選択画面のニックネーム表示を更新
+function updateNicknameDisplay() {
+  const nicknameTextEl = document.getElementById('nicknameText');
+  if (nicknameTextEl && nickname) {
+    nicknameTextEl.textContent = `回答者：${nickname}`;
+  }
+}
+
+// ニックネーム編集ボタンをクリック
+function editNickname() {
+  isEditingNickname = true;
+  // 警告メッセージを表示
+  const warningEl = document.getElementById('nicknameWarning');
+  if (warningEl) {
+    warningEl.classList.remove('hidden');
+  }
+  // 現在のニックネームを入力欄に設定
+  const inputEl = document.getElementById('nicknameInput');
+  if (inputEl) {
+    inputEl.value = nickname;
+  }
+  // ニックネーム入力画面へ
+  showScreen('nicknameScreen');
 }
 
 // ニックネーム送信
@@ -77,7 +126,25 @@ function submitNickname(){
     return;
   }
 
+  // 編集モードで名前が変更された場合、合格証をリセット
+  if (isEditingNickname && input !== nickname) {
+    clearCertificatesFromStorage();
+    isEditingNickname = false;
+  }
+
   nickname = input;
+
+  // ローカルストレージに保存
+  saveNicknameToStorage(nickname);
+
+  // ニックネーム表示を更新
+  updateNicknameDisplay();
+
+  // 警告メッセージを非表示にする
+  const warningEl = document.getElementById('nicknameWarning');
+  if (warningEl) {
+    warningEl.classList.add('hidden');
+  }
 
   // フォームを非表示にして「問題作成中」メッセージを表示
   document.getElementById('nicknameForm').style.display = 'none';
@@ -89,6 +156,12 @@ function submitNickname(){
     document.getElementById('preparingMessage').style.display = 'none';
     showScreen('genreScreen');
   }, 300);
+}
+
+// ローカルストレージから合格証データを削除
+function clearCertificatesFromStorage() {
+  localStorage.removeItem(STORAGE_KEY_CERTIFICATES);
+  console.log('合格証データをリセットしました');
 }
 
 // ジャンル選択
