@@ -1123,24 +1123,41 @@ function showUltraQuestion() {
     questionText.style.display = 'block';
   }
 
-  // 選択肢を表示
+  // 選択肢を表示（GAS側でシャッフル済み）
   choicesDiv.innerHTML = '';
-  const choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD].filter(c => c);
+  const isImage = q.displayType === 'image';
 
-  choices.forEach((choice) => {
-    const choiceBtn = document.createElement('button');
-    choiceBtn.className = 'choice';
-    choiceBtn.innerHTML = DOMPurify.sanitize(choice, {
-      ALLOWED_TAGS: ['br', 'b', 'i', 'u', 'strong', 'em'],
-      ALLOWED_ATTR: []
-    });
+  // 選択肢マップを作成（通常問題と同じ）
+  const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
 
-    choiceBtn.onclick = function() {
-      handleUltraAnswer(choice);
+  const gridDiv = document.createElement('div');
+  gridDiv.className = 'image-grid';
+
+  Object.keys(choiceMap).forEach(label => {
+    const value = choiceMap[label];
+    if (!value) return; // 空の選択肢はスキップ
+
+    const button = document.createElement('button');
+    button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
+    button.dataset.label = label;
+    button.dataset.value = value;
+
+    if (isImage) {
+      button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
+                          <div class="image-choice-label">${label}</div>`;
+    } else {
+      const sanitizedHtml = DOMPurify.sanitize(value);
+      button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
+    }
+
+    button.onclick = function() {
+      handleUltraAnswer(label);
     };
 
-    choicesDiv.appendChild(choiceBtn);
+    gridDiv.appendChild(button);
   });
+
+  choicesDiv.appendChild(gridDiv);
 
   // タイマーをリセットして開始
   startUltraTimer();

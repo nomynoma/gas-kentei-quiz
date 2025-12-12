@@ -510,6 +510,38 @@ function getUltraModeQuestions(genre) {
         q.correctHash = generateAnswerHash(correctAnswer);
       }
 
+      // 選択肢をシャッフル（入力問題を除く）
+      if (q.selectionType !== 'input') {
+        var choices = [
+          q.choiceA || '',
+          q.choiceB || '',
+          q.choiceC || '',
+          q.choiceD || ''
+        ];
+
+        // 空の選択肢を除外
+        var validChoices = [];
+        for (var k = 0; k < choices.length; k++) {
+          if (choices[k]) {
+            validChoices.push(choices[k]);
+          }
+        }
+
+        // 選択肢をシャッフル（Fisher–Yates）
+        for (var k = validChoices.length - 1; k > 0; k--) {
+          var l = Math.floor(Math.random() * (k + 1));
+          var tmp = validChoices[k];
+          validChoices[k] = validChoices[l];
+          validChoices[l] = tmp;
+        }
+
+        // シャッフルした選択肢を再代入
+        q.choiceA = validChoices[0] || '';
+        q.choiceB = validChoices[1] || '';
+        q.choiceC = validChoices[2] || '';
+        q.choiceD = validChoices[3] || '';
+      }
+
       allQuestions.push(q);
     }
   }
