@@ -23,6 +23,15 @@ let isEditingNickname = false; // ニックネーム編集モードかどうか
 const STORAGE_KEY_NICKNAME = 'quiz_nickname';
 const STORAGE_KEY_CERTIFICATES = 'quiz_certificates';
 
+// ========================================
+// 超級モード専用の変数
+// ========================================
+let isUltraMode = false; // 超級モード中かどうか
+let ultraQuestions = []; // 超級モード用の問題配列
+let ultraCurrentQuestion = 0; // 超級モード用の現在の問題番号
+let ultraTimer = null; // 超級モード用のタイマーID
+let ultraTimeLeft = 10; // 超級モード用の残り時間（秒）
+
 // 初期化：画像URLとジャンルボタンを動的に設定
 function initializeApp() {
   // Faviconの設定
@@ -872,6 +881,50 @@ function initializeGenreButtons() {
       difficultyContainer.appendChild(difficultyWrapper);
     });
 
+    // 超級ボタンを追加（上級クリア後のみ表示）
+    const ultraWrapper = document.createElement('div');
+    ultraWrapper.className = 'difficulty-wrapper';
+
+    const ultraBtn = document.createElement('button');
+    ultraBtn.className = 'btn difficulty-btn ultra-btn';
+    ultraBtn.textContent = '超級';
+
+    // 超級の解放判定：上級クリア済みかどうか
+    const ultraStorageKey = genreName + '_上級';
+    const isUltraUnlocked = localStorage.getItem(ultraStorageKey) !== null;
+
+    if (isUltraUnlocked) {
+      ultraBtn.onclick = function() {
+        startUltraMode(genreName);
+      };
+    } else {
+      ultraBtn.disabled = true;
+      ultraBtn.classList.add('locked');
+    }
+
+    ultraWrapper.appendChild(ultraBtn);
+
+    // 超級の合格証バッジ
+    const ultraCertKey = genreName + '_超級';
+    const ultraCertData = localStorage.getItem(ultraCertKey);
+
+    if (ultraCertData) {
+      const badgeLink = document.createElement('a');
+      badgeLink.href = base64ToBlobUrl(ultraCertData);
+      badgeLink.target = '_blank';
+      badgeLink.className = 'certificate-medal';
+      badgeLink.title = '超級合格証を別窓で開く';
+      badgeLink.textContent = '🏆';
+
+      badgeLink.onclick = function(e) {
+        e.stopPropagation();
+      };
+
+      ultraWrapper.appendChild(badgeLink);
+    }
+
+    difficultyContainer.appendChild(ultraWrapper);
+
     genreContainer.appendChild(difficultyContainer);
     genreButtonsDiv.appendChild(genreContainer);
   });
@@ -959,4 +1012,250 @@ function base64ToBlobUrl(base64DataUrl) {
 
   const blob = new Blob([bytes], { type: mime });
   return URL.createObjectURL(blob);
+}
+
+// ========================================
+// 超級モード専用の関数群
+// ========================================
+
+/**
+ * SHA-256ハッシュを生成（Web Crypto API使用）
+ * @param {string} text - ハッシュ化する文字列
+ * @returns {Promise<string>} ハッシュ値（16進数文字列）
+ */
+async function sha256(text) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+/**
+ * 回答を正規化してハッシュ化
+ * @param {string|Array} answer - ユーザーの回答
+ * @returns {Promise<string>} ハッシュ値
+ */
+async function hashAnswer(answer) {
+  let normalized;
+
+  if (Array.isArray(answer)) {
+    // 配列の場合はソートして結合
+    normalized = answer
+      .map(a => a.toString().trim().toUpperCase())
+      .sort()
+      .join(',');
+  } else {
+    // 文字列の場合
+    normalized = answer.toString().trim().toUpperCase();
+  }
+
+  return await sha256(normalized);
+}
+
+/**
+ * 超級モードを開始
+ * @param {string} genre - ジャンル名
+ */
+function startUltraMode(genre) {
+  isUltraMode = true;
+  currentGenre = genre;
+  ultraCurrentQuestion = 0;
+
+  showScreen('loading');
+
+  // GASから超級モード用の問題を取得
+  google.script.run
+    .withSuccessHandler(function(questionsData) {
+      ultraQuestions = questionsData;
+
+      if (ultraQuestions.length === 0) {
+        alert('問題の取得に失敗しました');
+        backToGenreSelection();
+        return;
+      }
+
+      // 最初の問題を表示
+      showUltraQuestion();
+    })
+    .withFailureHandler(function(error) {
+      console.error('超級モード: 問題取得エラー', error);
+      alert('問題の読み込みに失敗しました: ' + error.message);
+      backToGenreSelection();
+    })
+    .getUltraModeQuestions(genre);
+}
+
+/**
+ * 超級モードの問題を表示
+ */
+function showUltraQuestion() {
+  const q = ultraQuestions[ultraCurrentQuestion];
+
+  // 画面要素を取得
+  const questionText = document.getElementById('ultraQuestionText');
+  const questionImage = document.getElementById('ultraQuestionImage');
+  const choicesDiv = document.getElementById('ultraChoices');
+  const currentNumEl = document.getElementById('ultraCurrentNum');
+  const totalNumEl = document.getElementById('ultraTotalNum');
+
+  // 問題番号を更新
+  currentNumEl.textContent = ultraCurrentQuestion + 1;
+  totalNumEl.textContent = ultraQuestions.length;
+
+  // 問題文を表示（サニタイズ）
+  questionText.innerHTML = DOMPurify.sanitize(q.question, {
+    ALLOWED_TAGS: ['br', 'b', 'i', 'u', 'strong', 'em'],
+    ALLOWED_ATTR: []
+  });
+
+  // 画像表示
+  questionImage.innerHTML = '';
+  if (q.displayType === 'image' && q.question) {
+    const img = document.createElement('img');
+    img.src = q.question;
+    img.alt = '問題画像';
+    img.classList.add('question-image');
+    questionImage.appendChild(img);
+    questionText.style.display = 'none';
+  } else {
+    questionText.style.display = 'block';
+  }
+
+  // 選択肢を表示
+  choicesDiv.innerHTML = '';
+  const choices = [q.choiceA, q.choiceB, q.choiceC, q.choiceD].filter(c => c);
+
+  choices.forEach((choice) => {
+    const choiceBtn = document.createElement('button');
+    choiceBtn.className = 'choice';
+    choiceBtn.innerHTML = DOMPurify.sanitize(choice, {
+      ALLOWED_TAGS: ['br', 'b', 'i', 'u', 'strong', 'em'],
+      ALLOWED_ATTR: []
+    });
+
+    choiceBtn.onclick = function() {
+      handleUltraAnswer(choice);
+    };
+
+    choicesDiv.appendChild(choiceBtn);
+  });
+
+  // タイマーをリセットして開始
+  startUltraTimer();
+
+  // 画面表示
+  showScreen('ultraQuestionScreen');
+}
+
+/**
+ * 超級モードのタイマーを開始
+ */
+function startUltraTimer() {
+  // 既存のタイマーをクリア
+  if (ultraTimer) {
+    clearInterval(ultraTimer);
+  }
+
+  ultraTimeLeft = 10;
+  updateUltraTimerDisplay();
+
+  ultraTimer = setInterval(() => {
+    ultraTimeLeft--;
+    updateUltraTimerDisplay();
+
+    if (ultraTimeLeft <= 0) {
+      clearInterval(ultraTimer);
+      handleUltraTimeOut();
+    }
+  }, 1000);
+}
+
+/**
+ * 超級モードのタイマー表示を更新
+ */
+function updateUltraTimerDisplay() {
+  const timerEl = document.getElementById('ultraTimer');
+  timerEl.textContent = ultraTimeLeft;
+
+  // 残り3秒以下で警告表示
+  if (ultraTimeLeft <= 3) {
+    timerEl.classList.add('warning');
+  } else {
+    timerEl.classList.remove('warning');
+  }
+}
+
+/**
+ * 超級モードの回答処理
+ * @param {string} answer - ユーザーの回答
+ */
+async function handleUltraAnswer(answer) {
+  // タイマーを停止
+  clearInterval(ultraTimer);
+
+  // 選択肢ボタンを無効化
+  const choiceButtons = document.querySelectorAll('#ultraChoices .choice');
+  choiceButtons.forEach(btn => btn.disabled = true);
+
+  const q = ultraQuestions[ultraCurrentQuestion];
+
+  // ハッシュ値で判定
+  const userHash = await hashAnswer(answer);
+  const isCorrect = userHash === q.correctHash;
+
+  if (isCorrect) {
+    // 正解 → 次の問題へ
+    ultraCurrentQuestion++;
+
+    if (ultraCurrentQuestion >= ultraQuestions.length) {
+      // 全問正解！合格証を発行
+      showUltraCertificate();
+    } else {
+      // 次の問題へ（少し間を置く）
+      setTimeout(() => {
+        showUltraQuestion();
+      }, 500);
+    }
+  } else {
+    // 不正解 → 失敗画面へ
+    showUltraFailScreen();
+  }
+}
+
+/**
+ * 超級モードのタイムアウト処理
+ */
+function handleUltraTimeOut() {
+  // 失敗画面へ
+  showUltraFailScreen();
+}
+
+/**
+ * 超級モードの失敗画面を表示
+ */
+function showUltraFailScreen() {
+  const failNumEl = document.getElementById('ultraFailNum');
+  failNumEl.textContent = ultraCurrentQuestion + 1;
+
+  showScreen('ultraFailScreen');
+}
+
+/**
+ * 超級モードをリトライ
+ */
+function retryUltraMode() {
+  startUltraMode(currentGenre);
+}
+
+/**
+ * 超級モードの合格証を表示
+ */
+function showUltraCertificate() {
+  // 仮実装：上級の合格証を流用
+  currentLevelIndex = 2; // 上級
+
+  // 合格証生成（既存の関数を使用）
+  generateCertificate('超級');
 }

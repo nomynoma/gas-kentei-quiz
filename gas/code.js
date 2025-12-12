@@ -1,3 +1,12 @@
+// ========================================
+// グローバル定数
+// ========================================
+// ⚠️ 重要: この配列は config.js の GENRE_NAMES と一致させる必要があります
+var GENRES = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+
+// ⚠️ 重要: この配列は script.js の levels と一致させる必要があります
+var LEVELS = ['初級', '中級', '上級'];
+
 function doGet(e) {
   // goukakuパラメータがある場合は合格証画像表示画面を返す
   if (e.parameter && e.parameter.goukaku) {
@@ -188,8 +197,8 @@ function reloadQuestionCache() {
   try {
     var startTime = new Date().getTime();
 
-    var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
-    var levels = ['初級', '中級', '上級'];
+    var genres = GENRES;
+    var levels = LEVELS;
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -294,8 +303,8 @@ function reloadQuestionCache() {
  */
 function clearQuestionCache() {
   var cache = CacheService.getScriptCache();
-  var genres = ['ジャンル1','ジャンル2','ジャンル3','ジャンル4','ジャンル5','ジャンル6'];
-  var levels = ['初級','中級','上級'];
+  var genres = GENRES;
+  var levels = LEVELS;
 
   for (var g = 0; g < genres.length; g++) {
     for (var l = 0; l < levels.length; l++) {
@@ -451,4 +460,103 @@ function judgeAnswer(payload) {
   return {
     correct: isCorrect
   };
+}
+
+// ========================================
+// 超級モード専用の関数群
+// ========================================
+
+/**
+ * 超級モード用: 指定ジャンルの全レベル問題を取得（ハッシュ値付き）
+ * @param {string} genre - ジャンル名
+ * @returns {Array} 全レベルの問題をシャッフルした配列（ハッシュ値付き）
+ */
+function getUltraModeQuestions(genre) {
+  var cache = CacheService.getScriptCache();
+  var levels = LEVELS;
+  var allQuestions = [];
+
+  // 全レベルの問題を取得
+  for (var i = 0; i < levels.length; i++) {
+    var level = levels[i];
+    var cacheKey = 'q_' + genre + '_' + level;
+    var answerCacheKey = 'a_' + genre + '_' + level;
+
+    var cached = cache.get(cacheKey);
+    var answerCached = cache.get(answerCacheKey);
+
+    // キャッシュがない場合は自動リロード（既存ロジックと同じ）
+    if (!cached || !answerCached) {
+      Logger.log('超級モード: キャッシュが見つかりません: ' + cacheKey);
+      reloadQuestionCache();
+      cached = cache.get(cacheKey);
+      answerCached = cache.get(answerCacheKey);
+
+      if (!cached || !answerCached) {
+        throw new Error('超級モード: キャッシュの取得に失敗しました: ' + cacheKey);
+      }
+    }
+
+    var questions = JSON.parse(cached);
+    var answerMap = JSON.parse(answerCached);
+
+    // 各問題にハッシュ値を追加
+    for (var j = 0; j < questions.length; j++) {
+      var q = questions[j];
+      var correctAnswer = answerMap[q.id];
+
+      if (correctAnswer !== undefined) {
+        // 正解のハッシュ値を生成
+        q.correctHash = generateAnswerHash(correctAnswer);
+      }
+
+      allQuestions.push(q);
+    }
+  }
+
+  // 全問題をシャッフル（Fisher-Yates）
+  for (var i = allQuestions.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = allQuestions[i];
+    allQuestions[i] = allQuestions[j];
+    allQuestions[j] = tmp;
+  }
+
+  Logger.log('超級モード: ' + genre + 'の問題を' + allQuestions.length + '問取得しました');
+  return allQuestions;
+}
+
+/**
+ * 正解のハッシュ値を生成
+ * @param {string|Array} answer - 正解（文字列または配列）
+ * @returns {string} ハッシュ値
+ */
+function generateAnswerHash(answer) {
+  var normalized;
+
+  if (Array.isArray(answer)) {
+    // 配列の場合はソートして結合
+    normalized = answer
+      .map(function(a) { return a.toString().trim().toUpperCase(); })
+      .sort()
+      .join(',');
+  } else {
+    // 文字列の場合
+    normalized = answer.toString().trim().toUpperCase();
+  }
+
+  // SHA-256ハッシュを生成
+  var hash = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    normalized,
+    Utilities.Charset.UTF_8
+  );
+
+  // バイト配列を16進数文字列に変換
+  var hashString = hash.map(function(byte) {
+    var v = (byte < 0) ? 256 + byte : byte;
+    return ('0' + v.toString(16)).slice(-2);
+  }).join('');
+
+  return hashString;
 }

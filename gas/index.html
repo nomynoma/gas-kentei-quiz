@@ -129,6 +129,33 @@
     <div class="loading">問題を読み込んでいます...</div>
   </div>
 
+  <!-- 超級モード: 問題画面 -->
+  <div id="ultraQuestionScreen" class="screen">
+    <!-- タイマー表示 -->
+    <div class="ultra-timer-area">
+      <div class="ultra-timer" id="ultraTimer">10</div>
+      <div class="ultra-progress-text">
+        <span id="ultraCurrentNum">1</span> / <span id="ultraTotalNum">30</span>
+      </div>
+    </div>
+
+    <h2 id="ultraQuestionText" class="question-text"></h2>
+    <div id="ultraQuestionImage" class="question-image-container"></div>
+    <div id="ultraChoices" class="choices"></div>
+  </div>
+
+  <!-- 超級モード: 失敗画面 -->
+  <div id="ultraFailScreen" class="screen">
+    <h1>💦 チャレンジ失敗</h1>
+    <p class="ultra-fail-message">
+      <span id="ultraFailNum"></span>問目でチャレンジ失敗しました
+    </p>
+    <div class="button-area">
+      <button class="btn" onclick="backToGenreSelection()">ジャンル選択へ戻る</button>
+      <button class="btn btn-primary" onclick="retryUltraMode()">もう一度挑戦</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ========================================
