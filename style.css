@@ -341,13 +341,12 @@ h1 {
 }
 
 .progress-dot {
-  width: 10vw;
+  width: 10%;
   height: 16px;
-  border-radius: 2px;
   display: inline-block;
-  outline: 1px solid #999;
+  outline: 1px solid #c7c6c6;
   outline-offset: -2px;
-  background: #999;
+  background: #fff;
   transition: all 0.3s ease;
   cursor: pointer;
   flex-shrink: 0;
@@ -364,7 +363,7 @@ h1 {
 }
 
 .progress-dot.unanswered {
-  background: #999;
+  background: #fff;
 }
 
 .progress-dot.current {

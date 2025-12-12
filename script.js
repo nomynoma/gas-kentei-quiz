@@ -972,6 +972,12 @@ function nextSection(){
 
 // ジャンル選択に戻る
 function backToGenreSelection() {
+  // 超級タイマーをクリア
+  if (ultraTimer) {
+    clearInterval(ultraTimer);
+    ultraTimer = null;
+  }
+
   // ジャンルボタンを再生成（合格証バッジを更新）
   initializeGenreButtons();
   showScreen('genreScreen');
