@@ -876,7 +876,7 @@ function initializeGenreButtons() {
           e.stopPropagation();
         };
 
-        genreTitle.appendChild(badgeLink);
+        difficultyWrapper.appendChild(badgeLink);
       }
 
       difficultyContainer.appendChild(difficultyWrapper);
