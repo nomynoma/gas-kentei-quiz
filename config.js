@@ -52,7 +52,6 @@ function getGenreNumber(genreName) {
 const IMAGE_URLS = {
   // Favicon
   favicon: HOSTING_BASE_URL + '/imgs/favicon.svg',
-  faviconCertificate: HOSTING_BASE_URL + '/imgs/favicon_certificate.svg',
 
   // OGP画像
   ogpImage: HOSTING_BASE_URL + '/imgs/ogp-image.png'
@@ -93,6 +92,3 @@ const CERTIFICATE_BG_IMAGE_MAP = {
   '6-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg',
   '6-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg'  // 超級（仮で上級の画像を使用）
 };
-
-// 合格証ページベースURL
-const CERTIFICATE_BASE_URL = HOSTING_BASE_URL + '/certificate/';
