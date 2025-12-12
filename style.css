@@ -6,10 +6,41 @@
 body {
   font-family: 'Segoe UI', sans-serif;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   background: #f0f2f5;
   min-height: 100vh;
   box-sizing: border-box;
+}
+
+/* ========================================
+   ヘッダーエリア
+   ======================================== */
+
+.header-area {
+  background: white;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
 }
 
 .container {
@@ -19,7 +50,7 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   width: 90%;
   max-width: 400px;
-  margin: 0 auto;
+  margin: 20px auto;
   box-sizing: border-box;
   text-align: center;
 }
@@ -671,16 +702,36 @@ h1 {
    ニックネーム表示・編集機能
    ======================================== */
 
-/* ジャンル選択画面右上のニックネーム表示エリア */
+/* ニックネーム表示エリア（ヘッダー内で使用） */
 .nickname-display {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ========================================
+   ジャンル選択へ戻るボタン（ヘッダー左側）
+   ======================================== */
+
+.back-to-genre-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
   font-size: 14px;
-  color: #666;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-to-genre-btn:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102,126,234,0.4);
+}
+
+.back-to-genre-btn.hidden {
+  visibility: hidden;
 }
 
 /* 編集ボタン */

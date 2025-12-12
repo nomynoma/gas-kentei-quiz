@@ -62,6 +62,41 @@ function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el = document.getElementById(id);
   if(el) el.classList.add('active');
+
+  // ヘッダーエリアの表示制御
+  updateHeaderArea(id);
+}
+
+// ヘッダーエリアの表示制御
+function updateHeaderArea(screenId) {
+  const headerArea = document.querySelector('.header-area');
+  const backBtn = document.getElementById('backToGenreButton');
+  const nicknameDisplay = document.getElementById('nicknameDisplay');
+
+  if (!headerArea) return;
+
+  // ニックネーム入力画面ではヘッダー全体を非表示
+  if (screenId === 'nicknameScreen') {
+    headerArea.style.display = 'none';
+    return;
+  }
+
+  // その他の画面ではヘッダーを表示
+  headerArea.style.display = 'flex';
+
+  // ジャンル選択へ戻るボタンの表示制御
+  if (backBtn) {
+    if (screenId === 'genreScreen') {
+      backBtn.classList.add('hidden');
+    } else {
+      backBtn.classList.remove('hidden');
+    }
+  }
+
+  // ニックネーム表示エリアは常に表示（ニックネーム入力画面以外）
+  if (nicknameDisplay) {
+    nicknameDisplay.style.display = 'flex';
+  }
 }
 
 // ローカルストレージからニックネームを読み込み

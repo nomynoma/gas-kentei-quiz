@@ -13,6 +13,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
+<!-- ヘッダーエリア -->
+<div class="header-area">
+  <div class="header-left">
+    <button id="backToGenreButton" class="back-to-genre-btn hidden" onclick="backToGenreSelection()">
+      ← ジャンル選択へ
+    </button>
+  </div>
+  <div class="header-right">
+    <!-- ニックネーム表示エリア -->
+    <div id="nicknameDisplay" class="nickname-display">
+      <span id="nicknameText"></span>
+      <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+    </div>
+  </div>
+</div>
+
 <div class="container">
 
   <!-- ニックネーム入力画面 -->
@@ -40,12 +56,6 @@
 
   <!-- ジャンル選択画面 -->
   <div id="genreScreen" class="screen">
-    <!-- ニックネーム表示エリア（右上） -->
-    <div id="nicknameDisplay" class="nickname-display">
-      <span id="nicknameText">回答者：</span>
-      <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
-    </div>
-
     <h1>📚 ジャンル選択</h1>
     <p class="description-text">
       挑戦したいジャンルを選んでください
