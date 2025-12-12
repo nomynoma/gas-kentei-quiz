@@ -7,27 +7,8 @@
 <title>クイズアプリ</title>
 <link rel="icon" href="https://nomynoma.github.io/gas-kentei-quiz/imgs/favicon.svg" type="image/svg+xml">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- 外部CSSファイル読み込み（URLパラメータから動的に設定） -->
-<script>
-  (function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const baseUrl = urlParams.get('baseUrl');
-
-    if (baseUrl) {
-      // URLパラメータがある場合はそれを使用
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = baseUrl + '/style.css';
-      document.head.appendChild(link);
-    } else {
-      // URLパラメータがない場合はローカル開発用のパスを使用
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '../style.css';
-      document.head.appendChild(link);
-    }
-  })();
-</script>
+<!-- 外部CSSファイル読み込み（GitHub Pages用） -->
+<link rel="stylesheet" href="https://nomynoma.github.io/gas-kentei-quiz/style.css">
 <!-- DOMPurify CDN を head に追加しておく -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>

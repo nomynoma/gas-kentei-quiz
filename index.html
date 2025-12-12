@@ -44,10 +44,8 @@ iframe {
 <body>
 <iframe id="gasIframe" src=""></iframe>
 <script>
-  // config.jsで定義されたGAS_DEPLOYMENT_URLとHOSTING_BASE_URLを使用
-  // HOSTING_BASE_URLをクエリパラメータとしてGASに渡す
-  const iframeSrc = GAS_DEPLOYMENT_URL + '?baseUrl=' + encodeURIComponent(HOSTING_BASE_URL);
-  document.getElementById('gasIframe').src = iframeSrc;
+  // config.jsで定義されたGAS_DEPLOYMENT_URLを使用
+  document.getElementById('gasIframe').src = GAS_DEPLOYMENT_URL;
 </script>
 </body>
 </html>
