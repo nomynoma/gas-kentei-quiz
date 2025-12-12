@@ -854,29 +854,29 @@ h1 {
 .difficulty-wrapper {
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-width: 110px; /* メダル分のスペースを確保 */
+  gap: 0.3rem;
+  width: 7rem;
 }
 
 /* 難易度ボタン */
 .difficulty-btn {
-  width: 80px; /* 固定幅でずれを防ぐ */
-  padding: 10px 15px;
-  font-size: 16px;
+  width: 4rem;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
   margin: 0;
   background: #667eea;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.3s;
-  flex-shrink: 0; /* 縮小を防ぐ */
+  flex-shrink: 0;
 }
 
 .difficulty-btn:hover:not(:disabled) {
   background: #5568d3;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+  transform: translateY(-0.125rem);
+  box-shadow: 0 0.3rem 0.9rem rgba(102,126,234,0.4);
 }
 
 /* 超級ボタン */
@@ -887,7 +887,7 @@ h1 {
 
 .difficulty-btn.ultra-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
-  box-shadow: 0 5px 15px rgba(118,75,162,0.5);
+  box-shadow: 0 0.3rem 0.9rem rgba(118,75,162,0.5);
 }
 
 /* 非活性（ロック）状態 */
@@ -901,14 +901,14 @@ h1 {
   opacity: 0.6;
 }
 
-/* 合格証メダル（難易度ボタンの右側） */
+/* 合格証メダル */
 .certificate-medal {
   display: inline-block;
-  font-size: 24px;
+  font-size: 1.5rem;
   cursor: pointer;
   transition: transform 0.2s ease;
   text-decoration: none;
-  margin-left: 5px;
+  margin-left: 0.3rem;
 }
 
 .certificate-medal:hover {
@@ -919,20 +919,19 @@ h1 {
 @media (max-width: 600px) {
   .difficulty-container {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2列グリッド */
-    gap: 10px;
-    justify-items: stretch; /* セル内で伸縮 */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+    justify-items: stretch;
   }
 
   .difficulty-wrapper {
-    min-width: auto; /* モバイル時は最小幅制限を解除 */
-    width: 100%; /* セル幅いっぱいに */
+    min-width: auto;
+    width: 100%;
     justify-content: center;
   }
 
   .difficulty-btn {
-    width: 100%; /* ラッパー内で幅いっぱい */
-    min-width: 70px;
-    max-width: 150px;
+    width: 4rem;
+    padding: 0.5rem 0.75rem;
   }
 }
