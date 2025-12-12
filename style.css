@@ -921,12 +921,12 @@ h1 {
   }
 
   .difficulty-wrapper {
-    width: 100%;
+    /* width: 100%; */
     justify-content: center;
   }
 
   .difficulty-btn {
     flex: 1;
-    min-width: 100px;
+    /* min-width: 100px; */
   }
 }
