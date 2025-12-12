@@ -16,6 +16,14 @@ body {
    ヘッダーエリア
    ======================================== */
 
+.header-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 .header-area {
   background: white;
   border-bottom: 2px solid #e0e0e0;
@@ -23,14 +31,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .header-left {
   flex: 1;
+}
+
+.header-center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .header-right {
@@ -41,6 +52,26 @@ body {
   gap: 8px;
   font-size: 14px;
   color: #666;
+}
+
+.question-number-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.question-number-header.hidden {
+  display: none;
+}
+
+.progress-indicator-header {
+  padding: 8px 20px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.progress-indicator-header.hidden {
+  display: none;
 }
 
 .container {
@@ -127,29 +158,72 @@ h1 {
   background: #218838;
 }
 
-/* ナビゲーションボタン */
-.btn-nav-small {
-  display: inline-block;
-  min-width: auto;
-  width: auto;
-  margin: 0;
-  padding: 10px 20px;
-  font-size: 15px;
-}
-
-.nav-container {
+/* スライダー風ナビゲーションボタン */
+.slider-nav-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  border: none;
+  width: 50px;
+  height: 80px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 50;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.btn-nav-left {
-  margin-right: auto;
+.slider-nav-btn:hover:not(:disabled) {
+  background: rgba(86, 104, 211, 0.95);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 15px rgba(102,126,234,0.4);
 }
 
-.btn-nav-right {
-  margin-left: auto;
+.slider-nav-btn:disabled {
+  background: rgba(204, 204, 204, 0.6);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.slider-nav-left {
+  left: 10px;
+  border-radius: 0 8px 8px 0;
+}
+
+.slider-nav-right {
+  right: 10px;
+  border-radius: 8px 0 0 8px;
+}
+
+.slider-nav-icon {
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* スマホ表示用の調整 */
+@media (max-width: 600px) {
+  .slider-nav-btn {
+    width: 40px;
+    height: 60px;
+  }
+
+  .slider-nav-left {
+    left: 5px;
+  }
+
+  .slider-nav-right {
+    right: 5px;
+  }
+
+  .slider-nav-icon {
+    font-size: 36px;
+  }
 }
 
 /* 採点ボタン */
@@ -258,15 +332,16 @@ h1 {
 }
 
 .progress-dot {
-  width: 16px;
+  width: 10vw;
   height: 16px;
-  border-radius: 50%;
+  border-radius: 2px;
   display: inline-block;
   border: 2px solid #667eea;
   background: #999;
   transition: all 0.3s ease;
   cursor: pointer;
   flex-shrink: 0;
+  max-width: 80px;
 }
 
 .progress-dot:hover {

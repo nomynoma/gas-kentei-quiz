@@ -13,20 +13,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
-<!-- ヘッダーエリア -->
-<div class="header-area">
-  <div class="header-left">
-    <button id="backToGenreButton" class="back-to-genre-btn hidden" onclick="backToGenreSelection()">
-      ← ジャンル選択へ
-    </button>
-  </div>
-  <div class="header-right">
-    <!-- ニックネーム表示エリア -->
-    <div id="nicknameDisplay" class="nickname-display">
-      <span id="nicknameText"></span>
-      <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+<!-- ヘッダーラッパー -->
+<div class="header-wrapper">
+  <!-- ヘッダーエリア -->
+  <div class="header-area">
+    <div class="header-left">
+      <button id="backToGenreButton" class="back-to-genre-btn hidden" onclick="backToGenreSelection()">
+        ← ジャンル選択へ
+      </button>
+    </div>
+    <div class="header-center">
+      <!-- 問題番号表示エリア（問題画面でのみ表示） -->
+      <div id="questionNumberHeader" class="question-number-header hidden"></div>
+    </div>
+    <div class="header-right">
+      <!-- ニックネーム表示エリア -->
+      <div id="nicknameDisplay" class="nickname-display">
+        <span id="nicknameText"></span>
+        <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+      </div>
     </div>
   </div>
+  <!-- 回答状況インジケーター（ヘッダー下にぶら下げ） -->
+  <div id="progressIndicatorHeader" class="progress-indicator-header hidden"></div>
 </div>
 
 <div class="container">
@@ -66,15 +75,6 @@
 
   <!-- 問題画面 -->
   <div id="questionScreen" class="screen">
-    <!-- 【追加】回答状況インジケーター -->
-    <div id="progressIndicator"></div>
-    
-    <!-- 【追加】上部ナビゲーション（前へ・次へボタン） -->
-    <div id="topNavigation"></div>
-    
-    <!-- 問題番号（レベル名を含む形式に変更） -->
-    <div id="questionNumber" class="question-number"></div>
-    
     <!-- 複数選択の注意書き -->
     <div id="multipleInstruction" class="multiple-instruction" style="display:none;">
       ⚠️ 複数選択問題です。該当する選択肢をすべて選んでください。
@@ -85,11 +85,16 @@
     
     <!-- 選択肢 -->
     <div id="choices"></div>
-    
-    <!-- 【削除】feedback は不要になりました -->
-    <!-- <div id="feedback"></div> -->
-    
-    <!-- 【変更】下部ナビゲーションエリア（前へ・次へ・採点ボタン） -->
+
+    <!-- スライダー風ナビゲーションボタン（画面左右） -->
+    <button id="prevQuestionBtn" class="slider-nav-btn slider-nav-left" onclick="previousQuestion()">
+      <span class="slider-nav-icon">‹</span>
+    </button>
+    <button id="nextQuestionBtn" class="slider-nav-btn slider-nav-right" onclick="nextQuestion()">
+      <span class="slider-nav-icon">›</span>
+    </button>
+
+    <!-- 採点ボタンエリア -->
     <div id="navigation"></div>
   </div>
 

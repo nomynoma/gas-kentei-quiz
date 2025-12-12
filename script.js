@@ -78,20 +78,24 @@ function showScreen(id){
 
 // ヘッダーエリアの表示制御
 function updateHeaderArea(screenId) {
+  const headerWrapper = document.querySelector('.header-wrapper');
   const headerArea = document.querySelector('.header-area');
   const backBtn = document.getElementById('backToGenreButton');
   const nicknameDisplay = document.getElementById('nicknameDisplay');
+  const questionNumberHeader = document.getElementById('questionNumberHeader');
+  const progressIndicatorHeader = document.getElementById('progressIndicatorHeader');
 
-  if (!headerArea) return;
+  if (!headerWrapper) return;
 
   // ニックネーム入力画面ではヘッダー全体を非表示
   if (screenId === 'nicknameScreen') {
-    headerArea.style.display = 'none';
+    headerWrapper.style.display = 'none';
     return;
   }
 
   // その他の画面ではヘッダーを表示
-  headerArea.style.display = 'flex';
+  headerWrapper.style.display = 'block';
+  if (headerArea) headerArea.style.display = 'flex';
 
   // ジャンル選択へ戻るボタンの表示制御
   if (backBtn) {
@@ -99,6 +103,24 @@ function updateHeaderArea(screenId) {
       backBtn.classList.add('hidden');
     } else {
       backBtn.classList.remove('hidden');
+    }
+  }
+
+  // 問題番号表示の制御（問題画面でのみ表示）
+  if (questionNumberHeader) {
+    if (screenId === 'questionScreen') {
+      questionNumberHeader.classList.remove('hidden');
+    } else {
+      questionNumberHeader.classList.add('hidden');
+    }
+  }
+
+  // インジケーターヘッダーの制御（問題画面でのみ表示）
+  if (progressIndicatorHeader) {
+    if (screenId === 'questionScreen') {
+      progressIndicatorHeader.classList.remove('hidden');
+    } else {
+      progressIndicatorHeader.classList.add('hidden');
     }
   }
 
@@ -271,13 +293,21 @@ function showQuestion(){
   const isInput = q.selectionType === 'input';
   const isImage = q.displayType === 'image';
 
-  // 回答状況インジケーターを表示
-  document.getElementById('progressIndicator').innerHTML = renderProgressIndicator();
+  // 回答状況インジケーターをヘッダー下に表示
+  const progressIndicatorHeader = document.getElementById('progressIndicatorHeader');
+  if (progressIndicatorHeader) {
+    progressIndicatorHeader.innerHTML = renderProgressIndicator();
+    progressIndicatorHeader.classList.remove('hidden');
+  }
 
-  // 問題番号とレベル表示
+  // 問題番号とレベル表示（ヘッダーに表示）
   const levelName = levels[currentLevelIndex];
-  document.getElementById('questionNumber').textContent = levelName + '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
-  
+  const questionNumberHeader = document.getElementById('questionNumberHeader');
+  if (questionNumberHeader) {
+    questionNumberHeader.textContent = levelName + '問題 ' + (currentQuestion+1) + ' / ' + questions.length;
+    questionNumberHeader.classList.remove('hidden');
+  }
+
   document.getElementById('questionText').innerHTML = DOMPurify.sanitize(q.question);
   document.getElementById('multipleInstruction').style.display = isMultiple ? 'block' : 'none';
 
@@ -331,10 +361,16 @@ function showQuestion(){
     choicesDiv.appendChild(gridDiv);
   }
 
-  // 上部ナビゲーションボタンを表示（前へ・次へのみ）
-  renderTopNavigationButtons();
+  // スライダーナビゲーションボタンの状態を更新
+  updateSliderNavButtons();
 
-  // 下部ナビゲーションボタンを表示（前へ・次へ・採点）
+  // スライダーボタンを表示（ローディング後の再表示のため）
+  const prevBtn = document.getElementById('prevQuestionBtn');
+  const nextBtn = document.getElementById('nextQuestionBtn');
+  if (prevBtn) prevBtn.style.display = 'flex';
+  if (nextBtn) nextBtn.style.display = 'flex';
+
+  // 下部ナビゲーションボタンを表示（採点ボタンのみ）
   renderNavigationButtons();
 
   // 以前の回答を復元
@@ -370,70 +406,24 @@ function jumpToQuestion(index) {
   showQuestion();
 }
 
-// --- 上部ナビゲーションボタン（前へ・次へのみ） ---
-function renderTopNavigationButtons() {
-  const topNavDiv = document.getElementById('topNavigation');
-  topNavDiv.innerHTML = '';
+// --- スライダーナビゲーションボタンの状態更新 ---
+function updateSliderNavButtons() {
+  const prevBtn = document.getElementById('prevQuestionBtn');
+  const nextBtn = document.getElementById('nextQuestionBtn');
 
-  const navContainer = document.createElement('div');
-  navContainer.className = 'nav-container';
+  if (!prevBtn || !nextBtn) return;
 
-  // 前へボタン
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'btn btn-nav-small btn-nav-left';
-  prevBtn.textContent = '← 前へ';
-  prevBtn.onclick = previousQuestion;
-  if(currentQuestion === 0) {
-    prevBtn.disabled = true;
-  }
-  navContainer.appendChild(prevBtn);
+  // 前へボタンの状態
+  prevBtn.disabled = currentQuestion === 0;
 
-  // 次へボタン
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'btn btn-nav-small btn-nav-right';
-  nextBtn.textContent = '次へ →';
-  nextBtn.onclick = nextQuestion;
-  if(currentQuestion === questions.length - 1) {
-    nextBtn.disabled = true;
-  }
-  navContainer.appendChild(nextBtn);
-
-  topNavDiv.appendChild(navContainer);
+  // 次へボタンの状態
+  nextBtn.disabled = currentQuestion === questions.length - 1;
 }
 
-// --- 下部ナビゲーションボタン（前へ・次へ・採点） ---
+// --- 下部ナビゲーションボタン（採点ボタンのみ） ---
 function renderNavigationButtons() {
   const navDiv = document.getElementById('navigation');
   navDiv.innerHTML = '';
-
-  // 前へ・次へのコンテナ
-  const navContainer = document.createElement('div');
-  navContainer.className = 'nav-container';
-
-  // 前へボタン
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'btn btn-nav-small btn-nav-left';
-  prevBtn.textContent = '← 前へ';
-  prevBtn.onclick = previousQuestion;
-  if(currentQuestion === 0) {
-    prevBtn.disabled = true;
-  }
-  navContainer.appendChild(prevBtn);
-
-  // 次へボタン
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'btn btn-nav-small btn-nav-right';
-  nextBtn.textContent = '次へ →';
-  nextBtn.onclick = nextQuestion;
-  if(currentQuestion === questions.length - 1) {
-    nextBtn.disabled = true;
-  }
-  navContainer.appendChild(nextBtn);
-
-  navDiv.appendChild(navContainer);
-
-  // 改行を追加
-  navDiv.appendChild(document.createElement('br'));
 
   // 採点ボタン
   const submitBtn = document.createElement('button');
@@ -441,13 +431,13 @@ function renderNavigationButtons() {
   submitBtn.className = 'btn submit-all-btn';
   submitBtn.textContent = '採点';
   submitBtn.onclick = submitAllAnswers;
-  
+
   // 全問回答済みでなければ無効化
   if(!canSubmit()) {
     submitBtn.disabled = true;
     submitBtn.classList.add('disabled');
   }
-  
+
   navDiv.appendChild(submitBtn);
 }
 
@@ -468,7 +458,7 @@ function selectSingleChoice(button) {
   saveCurrentAnswer();
   
   // ナビゲーションボタンを更新（採点ボタンの有効化）
-  renderTopNavigationButtons();
+  updateSliderNavButtons();
   renderNavigationButtons();
 }
 
@@ -490,7 +480,7 @@ function toggleChoiceByButton(button){
   saveCurrentAnswer();
   
   // ナビゲーションボタンを更新（採点ボタンの有効化）
-  renderTopNavigationButtons();
+  updateSliderNavButtons();
   renderNavigationButtons();
 }
 
@@ -531,7 +521,10 @@ function saveCurrentAnswer() {
   };
   
   // インジケーターを更新
-  document.getElementById('progressIndicator').innerHTML = renderProgressIndicator();
+  const progressIndicatorHeader = document.getElementById('progressIndicatorHeader');
+  if (progressIndicatorHeader) {
+    progressIndicatorHeader.innerHTML = renderProgressIndicator();
+  }
 }
 
 // --- 保存された回答を復元 ---
@@ -628,9 +621,6 @@ function submitAllAnswers() {
 
 // --- 採点中ローディング画面を表示 ---
 function showGradingLoading() {
-  document.getElementById('progressIndicator').innerHTML = '';
-  document.getElementById('topNavigation').innerHTML = '';
-  document.getElementById('questionNumber').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = 'none';
   document.getElementById('questionText').innerHTML =
     '<div class="loading-container">' +
@@ -640,6 +630,13 @@ function showGradingLoading() {
     '</div>';
   document.getElementById('choices').innerHTML = '';
   document.getElementById('navigation').innerHTML = '';
+
+  // スライダーボタンを非表示
+  const prevBtn = document.getElementById('prevQuestionBtn');
+  const nextBtn = document.getElementById('nextQuestionBtn');
+  if (prevBtn) prevBtn.style.display = 'none';
+  if (nextBtn) nextBtn.style.display = 'none';
+
   showScreen('questionScreen');
 }
 
@@ -692,9 +689,6 @@ function showCertificate(){
 // 合格証作成中ローディング表示 → 画像生成 → 合格証画面表示
 function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml){
   // ローディング画面を表示（問題画面エリアを使用）
-  document.getElementById('progressIndicator').innerHTML = '';
-  document.getElementById('topNavigation').innerHTML = '';
-  document.getElementById('questionNumber').innerHTML = '';
   document.getElementById('multipleInstruction').style.display = 'none';
   document.getElementById('questionText').innerHTML =
     '<div class="loading-container">' +
@@ -704,6 +698,13 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
     '</div>';
   document.getElementById('choices').innerHTML = '';
   document.getElementById('navigation').innerHTML = '';
+
+  // スライダーボタンを非表示
+  const prevBtn = document.getElementById('prevQuestionBtn');
+  const nextBtn = document.getElementById('nextQuestionBtn');
+  if (prevBtn) prevBtn.style.display = 'none';
+  if (nextBtn) nextBtn.style.display = 'none';
+
   showScreen('questionScreen');
 
   // キャプチャ用エリアに設定
