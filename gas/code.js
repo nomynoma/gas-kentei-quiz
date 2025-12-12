@@ -38,7 +38,7 @@ function getConfigFromGitHub() {
 }
 
 /**
- * セクションごとの問題を取得（キャッシュ対応版）
+ * セクションごとの問題を取得（キャッシュ対応版・自動リロード対応・マルチユーザー対応）
  * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
  * @param {string} level - "初級", "中級", "上級"
  * @returns {Array} ランダム10問
@@ -46,10 +46,49 @@ function getConfigFromGitHub() {
 function getQuestions(genre, level) {
   var cache = CacheService.getScriptCache();
   var cacheKey = 'q_' + genre + '_' + level;
+  var lockKey = 'cache_reload_lock';
 
   var cached = cache.get(cacheKey);
+
+  // キャッシュが存在しない場合、自動的にリロード
   if (!cached) {
-    throw new Error('question cache not found: ' + cacheKey);
+    Logger.log('キャッシュが見つかりません: ' + cacheKey);
+
+    // 他のユーザーが既にリロード中かチェック
+    var isReloading = cache.get(lockKey);
+
+    if (isReloading) {
+      // 他のユーザーがリロード中 → 最大30秒待機してリトライ
+      Logger.log('他のユーザーがキャッシュリロード中です。待機します...');
+      var maxRetries = 15; // 15回 × 2秒 = 30秒
+      var retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        Utilities.sleep(2000); // 2秒待機
+        cached = cache.get(cacheKey);
+
+        if (cached) {
+          Logger.log('キャッシュリロード完了を確認しました');
+          break;
+        }
+
+        retryCount++;
+        Logger.log('リトライ ' + retryCount + '/' + maxRetries);
+      }
+
+      if (!cached) {
+        throw new Error('キャッシュリロードのタイムアウト: ' + cacheKey);
+      }
+    } else {
+      // 誰もリロードしていない → 自分でリロード開始
+      Logger.log('キャッシュリロードを開始します');
+      reloadQuestionCache();
+      cached = cache.get(cacheKey);
+
+      if (!cached) {
+        throw new Error('キャッシュの自動生成に失敗しました: ' + cacheKey);
+      }
+    }
   }
 
   var questions = JSON.parse(cached);
@@ -123,21 +162,40 @@ function getDeploymentUrl() {
  * キャッシュをリロード（問題を更新した時に実行）
  * スプレッドシートのボタンから実行可能
  * 全ジャンル・レベルのキャッシュをクリアして即座に再読み込み
+ * マルチユーザー対応：ロック機構付き
  */
 function reloadQuestionCache() {
-  var startTime = new Date().getTime();
   var cache = CacheService.getScriptCache();
+  var lockKey = 'cache_reload_lock';
 
-  var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
-  var levels = ['初級', '中級', '上級'];
+  // 既にリロード中かチェック
+  var isReloading = cache.get(lockKey);
+  if (isReloading) {
+    Logger.log('既に他のユーザーがリロード中です。スキップします。');
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      '既に他のユーザーがリロード中です',
+      'キャッシュリロード',
+      3
+    );
+    return;
+  }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  // ロックを取得（60秒間有効）
+  cache.put(lockKey, 'loading', 60);
 
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    'キャッシュをリロード中...',
-    'キャッシュリロード',
-    3
-  );
+  try {
+    var startTime = new Date().getTime();
+
+    var genres = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4', 'ジャンル5', 'ジャンル6'];
+    var levels = ['初級', '中級', '上級'];
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'キャッシュをリロード中...',
+      'キャッシュリロード',
+      3
+    );
 
   for (var g = 0; g < genres.length; g++) {
     var genreName = genres[g];
@@ -205,16 +263,27 @@ function reloadQuestionCache() {
     }
   }
 
-  var endTime = new Date().getTime();
-  var totalTime = ((endTime - startTime) / 1000).toFixed(2);
+    var endTime = new Date().getTime();
+    var totalTime = ((endTime - startTime) / 1000).toFixed(2);
 
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    'キャッシュを再構築しました（' + totalTime + '秒）',
-    'キャッシュリロード完了',
-    5
-  );
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      'キャッシュを再構築しました（' + totalTime + '秒）',
+      'キャッシュリロード完了',
+      5
+    );
 
-  return 'キャッシュリロード完了（' + totalTime + '秒）';
+    return 'キャッシュリロード完了（' + totalTime + '秒）';
+
+  } catch (error) {
+    // エラー発生時もロックを解放
+    Logger.log('キャッシュリロード中にエラー: ' + error);
+    throw error;
+
+  } finally {
+    // 必ずロックを解放
+    cache.remove(lockKey);
+    Logger.log('キャッシュリロードのロックを解放しました');
+  }
 }
 
 /**
