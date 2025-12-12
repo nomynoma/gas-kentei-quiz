@@ -854,29 +854,27 @@ h1 {
 .difficulty-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  width: 7rem;
+  gap: 5px;
 }
 
 /* 難易度ボタン */
 .difficulty-btn {
-  width: 4rem;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
+  min-width: 80px;
+  padding: 10px 15px;
+  font-size: 16px;
   margin: 0;
   background: #667eea;
   color: white;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
-  flex-shrink: 0;
 }
 
 .difficulty-btn:hover:not(:disabled) {
   background: #5568d3;
-  transform: translateY(-0.125rem);
-  box-shadow: 0 0.3rem 0.9rem rgba(102,126,234,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102,126,234,0.4);
 }
 
 /* 超級ボタン */
@@ -887,7 +885,7 @@ h1 {
 
 .difficulty-btn.ultra-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #5568d3 0%, #6a3d91 100%);
-  box-shadow: 0 0.3rem 0.9rem rgba(118,75,162,0.5);
+  box-shadow: 0 5px 15px rgba(118,75,162,0.5);
 }
 
 /* 非活性（ロック）状態 */
@@ -901,14 +899,14 @@ h1 {
   opacity: 0.6;
 }
 
-/* 合格証メダル */
+/* 合格証メダル（難易度ボタンの右側） */
 .certificate-medal {
   display: inline-block;
-  font-size: 1.5rem;
+  font-size: 24px;
   cursor: pointer;
   transition: transform 0.2s ease;
   text-decoration: none;
-  margin-left: 0.3rem;
+  margin-left: 5px;
 }
 
 .certificate-medal:hover {
@@ -918,20 +916,17 @@ h1 {
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
   .difficulty-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
-    justify-items: stretch;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .difficulty-wrapper {
-    min-width: auto;
     width: 100%;
     justify-content: center;
   }
 
   .difficulty-btn {
-    width: 4rem;
-    padding: 0.5rem 0.75rem;
+    flex: 1;
+    min-width: 100px;
   }
 }
