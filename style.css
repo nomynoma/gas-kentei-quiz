@@ -921,7 +921,7 @@ h1 {
   }
 
   .difficulty-wrapper {
-    /* width: 100%; */
+    width: 40%;
     justify-content: center;
   }
 
