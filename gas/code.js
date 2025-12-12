@@ -39,50 +39,17 @@ function include(filename) {
 function getQuestions(genre, level) {
   var cache = CacheService.getScriptCache();
   var cacheKey = 'q_' + genre + '_' + level;
-  var lockKey = 'cache_reload_lock';
 
   var cached = cache.get(cacheKey);
 
-  // キャッシュが存在しない場合、自動的にリロード
+  // キャッシュが存在しない場合、必要な分だけリロード
   if (!cached) {
-    Logger.log('キャッシュが見つかりません: ' + cacheKey);
+    // 特定のジャンル・レベルだけをリロード（高速化）
+    reloadSingleCache(genre, level);
+    cached = cache.get(cacheKey);
 
-    // 他のユーザーが既にリロード中かチェック
-    var isReloading = cache.get(lockKey);
-
-    if (isReloading) {
-      // 他のユーザーがリロード中 → 最大30秒待機してリトライ
-      Logger.log('他のユーザーがキャッシュリロード中です。待機します...');
-      var maxRetries = 30; // 最大30回
-      var retryCount = 0;
-
-      while (retryCount < maxRetries) {
-        // 先にキャッシュをチェック
-        cached = cache.get(cacheKey);
-
-        if (cached) {
-          Logger.log('キャッシュリロード完了を確認しました（リトライ ' + retryCount + '回）');
-          break;
-        }
-
-        // キャッシュがない場合のみ待機
-        Utilities.sleep(1000); // 1秒待機
-        retryCount++;
-        Logger.log('リトライ中... ' + retryCount + '/' + maxRetries);
-      }
-
-      if (!cached) {
-        throw new Error('キャッシュリロードのタイムアウト: ' + cacheKey);
-      }
-    } else {
-      // 誰もリロードしていない → 自分でリロード開始
-      Logger.log('キャッシュリロードを開始します');
-      reloadQuestionCache();
-      cached = cache.get(cacheKey);
-
-      if (!cached) {
-        throw new Error('キャッシュの自動生成に失敗しました: ' + cacheKey);
-      }
+    if (!cached) {
+      throw new Error('キャッシュの生成に失敗しました: ' + cacheKey);
     }
   }
 
@@ -151,6 +118,78 @@ function getQuestions(genre, level) {
  */
 function getDeploymentUrl() {
   return ScriptApp.getService().getUrl();
+}
+
+/**
+ * 特定のジャンル・レベルのキャッシュだけをリロード（高速化版）
+ * @param {string} genre - ジャンル名
+ * @param {string} level - レベル名
+ */
+function reloadSingleCache(genre, level) {
+  var cache = CacheService.getScriptCache();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(genre);
+
+  if (!sheet) {
+    throw new Error('シートが見つかりません: ' + genre);
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var questions = [];
+  var answerMap = {};
+
+  // 指定されたレベルの問題だけを抽出
+  for (var r = 1; r < data.length; r++) {
+    if (data[r][1] !== level) continue;
+
+    // ---- 出題用（正解なし） ----
+    questions.push({
+      id: data[r][0],
+      level: data[r][1],
+      selectionType: (data[r][2] || 'single').toLowerCase(),
+      displayType: (data[r][3] || 'text').toLowerCase(),
+      question: data[r][4],
+      choiceA: data[r][5],
+      choiceB: data[r][6],
+      choiceC: data[r][7],
+      choiceD: data[r][8]
+    });
+
+    // ---- 判定用 ----
+    var id = data[r][0];
+    var ans = data[r][9];
+    if (!id || ans === '') continue;
+
+    var selectionType = data[r][2];
+    if (selectionType !== 'input') {
+      var correctLabels = ans.toString().trim().toUpperCase().split(',');
+      var labelToText = {
+        A: data[r][5],
+        B: data[r][6],
+        C: data[r][7],
+        D: data[r][8]
+      };
+
+      answerMap[id] = correctLabels
+        .map(function(c) { return labelToText[c]; })
+        .filter(Boolean);
+    } else {
+      answerMap[id] = ans.toString().trim().toUpperCase();
+    }
+  }
+
+  // キャッシュに保存（7日間）
+  cache.put(
+    'q_' + genre + '_' + level,
+    JSON.stringify(questions),
+    604800
+  );
+
+  cache.put(
+    'a_' + genre + '_' + level,
+    JSON.stringify(answerMap),
+    604800
+  );
 }
 
 /**
