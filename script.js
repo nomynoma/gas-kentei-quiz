@@ -983,24 +983,6 @@ function backToGenreSelection() {
   showScreen('genreScreen');
 }
 
-function restartQuiz(){
-  nickname = '';
-  currentGenre = '';
-  currentLevelIndex = 0;
-  questions = [];
-  currentQuestion = 0;
-  score = 0;
-  selectedChoices = [];
-  userAnswers = [];
-  document.getElementById('nicknameInput').value = '';
-
-  // ニックネーム画面の表示状態をリセット
-  document.getElementById('nicknameForm').style.display = 'block';
-  document.getElementById('preparingMessage').style.display = 'none';
-
-  showScreen('nicknameScreen');
-}
-
 /**
  * Base64(DataURL) を Blob URL に変換して返す
  * @param {string} base64DataUrl - data:image/jpeg;base64,... 形式
