@@ -60,20 +60,22 @@ function getQuestions(genre, level) {
     if (isReloading) {
       // 他のユーザーがリロード中 → 最大30秒待機してリトライ
       Logger.log('他のユーザーがキャッシュリロード中です。待機します...');
-      var maxRetries = 15; // 15回 × 2秒 = 30秒
+      var maxRetries = 30; // 最大30回
       var retryCount = 0;
 
       while (retryCount < maxRetries) {
-        Utilities.sleep(2000); // 2秒待機
+        // 先にキャッシュをチェック
         cached = cache.get(cacheKey);
 
         if (cached) {
-          Logger.log('キャッシュリロード完了を確認しました');
+          Logger.log('キャッシュリロード完了を確認しました（リトライ ' + retryCount + '回）');
           break;
         }
 
+        // キャッシュがない場合のみ待機
+        Utilities.sleep(1000); // 1秒待機
         retryCount++;
-        Logger.log('リトライ ' + retryCount + '/' + maxRetries);
+        Logger.log('リトライ中... ' + retryCount + '/' + maxRetries);
       }
 
       if (!cached) {
@@ -252,13 +254,13 @@ function reloadQuestionCache() {
       cache.put(
         'q_' + genreName + '_' + level,
         JSON.stringify(questions),
-        21600
+        604800  // 7日間（24時間 × 7日 = 604800秒）
       );
 
       cache.put(
         'a_' + genreName + '_' + level,
         JSON.stringify(answerMap),
-        21600
+        604800  // 7日間（24時間 × 7日 = 604800秒）
       );
     }
   }
