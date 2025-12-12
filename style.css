@@ -855,11 +855,12 @@ h1 {
   display: flex;
   align-items: center;
   gap: 5px;
+  min-width: 110px; /* メダル分のスペースを確保 */
 }
 
 /* 難易度ボタン */
 .difficulty-btn {
-  min-width: 80px;
+  width: 80px; /* 固定幅でずれを防ぐ */
   padding: 10px 15px;
   font-size: 16px;
   margin: 0;
@@ -869,6 +870,7 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
+  flex-shrink: 0; /* 縮小を防ぐ */
 }
 
 .difficulty-btn:hover:not(:disabled) {
@@ -916,17 +918,21 @@ h1 {
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
   .difficulty-container {
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2列グリッド */
+    gap: 10px;
+    justify-items: stretch; /* セル内で伸縮 */
   }
 
   .difficulty-wrapper {
-    width: 100%;
+    min-width: auto; /* モバイル時は最小幅制限を解除 */
+    width: 100%; /* セル幅いっぱいに */
     justify-content: center;
   }
 
   .difficulty-btn {
-    flex: 1;
-    min-width: 100px;
+    width: 100%; /* ラッパー内で幅いっぱい */
+    min-width: 70px;
+    max-width: 150px;
   }
 }
