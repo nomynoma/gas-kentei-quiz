@@ -855,6 +855,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 5px;
+  position: relative;
 }
 
 /* 難易度ボタン */
@@ -901,16 +902,19 @@ h1 {
 
 /* 合格証メダル（難易度ボタンの右側） */
 .certificate-medal {
-  display: inline-block;
   font-size: 24px;
   cursor: pointer;
   transition: transform 0.2s ease;
   text-decoration: none;
-  margin-left: 5px;
+  position: absolute;
+  right: -2rem;
+  background-color: white;
+  border-radius: 50%;
+  border: 1px solid;
 }
 
 .certificate-medal:hover {
-  transform: scale(1.3);
+  transform: scale(1.2);
 }
 
 /* レスポンシブ対応 */
