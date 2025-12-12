@@ -66,12 +66,17 @@ body {
 
 .progress-indicator-header {
   padding: 8px 20px;
-  background: white;
+  background: #f8f9fa;
   border-bottom: 1px solid #e0e0e0;
 }
 
 .progress-indicator-header.hidden {
   display: none;
+}
+
+/* インジケーター内のdotsコンテナ */
+.progress-indicator-header .progress-dots {
+  margin-bottom: 0;
 }
 
 .container {
