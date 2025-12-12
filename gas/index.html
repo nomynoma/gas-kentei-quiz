@@ -7,8 +7,27 @@
 <title>クイズアプリ</title>
 <link rel="icon" href="https://nomynoma.github.io/gas-kentei-quiz/imgs/favicon.svg" type="image/svg+xml">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- 外部CSSファイル読み込み（GitHub Pages） -->
-<link rel="stylesheet" href="https://nomynoma.github.io/gas-kentei-quiz/style.css">
+<!-- 外部CSSファイル読み込み（URLパラメータから動的に設定） -->
+<script>
+  (function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const baseUrl = urlParams.get('baseUrl');
+
+    if (baseUrl) {
+      // URLパラメータがある場合はそれを使用
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = baseUrl + '/style.css';
+      document.head.appendChild(link);
+    } else {
+      // URLパラメータがない場合はローカル開発用のパスを使用
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '../style.css';
+      document.head.appendChild(link);
+    }
+  })();
+</script>
 <!-- DOMPurify CDN を head に追加しておく -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
@@ -17,20 +36,29 @@
 <div class="header-wrapper">
   <!-- ヘッダーエリア -->
   <div class="header-area">
-    <div class="header-left">
-      <button id="backToGenreButton" class="back-to-genre-btn hidden" onclick="backToGenreSelection()">
-        ← ジャンル選択へ
-      </button>
+    <!-- 1行目：問題番号 -->
+    <div class="header-row">
+      <div class="header-left"></div>
+      <div class="header-center">
+        <!-- 問題番号表示エリア（問題画面でのみ表示） -->
+        <div id="questionNumberHeader" class="question-number-header hidden"></div>
+      </div>
+      <div class="header-right"></div>
     </div>
-    <div class="header-center">
-      <!-- 問題番号表示エリア（問題画面でのみ表示） -->
-      <div id="questionNumberHeader" class="question-number-header hidden"></div>
-    </div>
-    <div class="header-right">
-      <!-- ニックネーム表示エリア -->
-      <div id="nicknameDisplay" class="nickname-display">
-        <span id="nicknameText"></span>
-        <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+    <!-- 2行目：TOPへ / 回答者 -->
+    <div class="header-row">
+      <div class="header-left">
+        <button id="backToGenreButton" class="back-to-genre-btn hidden" onclick="backToGenreSelection()">
+          ← ジャンル選択へ
+        </button>
+      </div>
+      <div class="header-center"></div>
+      <div class="header-right">
+        <!-- ニックネーム表示エリア -->
+        <div id="nicknameDisplay" class="nickname-display">
+          <span id="nicknameText"></span>
+          <button id="editNicknameBtn" class="edit-nickname-btn" onclick="editNickname()" title="編集">🖊️</button>
+        </div>
       </div>
     </div>
   </div>
