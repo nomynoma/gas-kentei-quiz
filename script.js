@@ -1253,8 +1253,8 @@ function retryUltraMode() {
  * 超級モードの合格証を表示
  */
 function showUltraCertificate() {
-  // 仮実装：上級の合格証を流用
-  currentLevelIndex = 2; // 上級
+  // 超級の合格証（レベルインデックス = 3）
+  currentLevelIndex = 3;
 
   // 合格証生成（既存の関数を使用）
   generateCertificate('超級');

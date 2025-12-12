@@ -59,33 +59,39 @@ const IMAGE_URLS = {
 };
 
 // 合格証明書背景画像URLマッピング
-// Key: "ジャンル番号-級番号" (例: "1-1"は ジャンル1の初級)
+// Key: "ジャンル番号-級番号" (例: "1-1"は ジャンル1の初級, "1-4"は ジャンル1の超級)
 // Value: 背景画像のフルURL
 const CERTIFICATE_BG_IMAGE_MAP = {
   // ジャンル1
   '1-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_1-1.jpg',
   '1-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_1-2.jpg',
   '1-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_1-3.jpg',
+  '1-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_1-3.jpg', // 超級（仮で上級の画像を使用）
   // ジャンル2
   '2-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_2-1.jpg',
   '2-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_2-2.jpg',
   '2-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_2-3.jpg',
+  '2-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_2-3.jpg', // 超級（仮で上級の画像を使用）
   // ジャンル3
   '3-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_3-1.jpg',
   '3-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_3-2.jpg',
   '3-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_3-3.jpg',
+  '3-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_3-3.jpg', // 超級（仮で上級の画像を使用）
   // ジャンル4
   '4-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_4-1.jpg',
   '4-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_4-2.jpg',
   '4-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_4-3.jpg',
+  '4-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_4-3.jpg', // 超級（仮で上級の画像を使用）
   // ジャンル5
   '5-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_5-1.jpg',
   '5-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_5-2.jpg',
   '5-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_5-3.jpg',
+  '5-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_5-3.jpg', // 超級（仮で上級の画像を使用）
   // ジャンル6
   '6-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-1.jpg',
   '6-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-2.jpg',
-  '6-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg'
+  '6-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg',
+  '6-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg'  // 超級（仮で上級の画像を使用）
 };
 
 // 合格証ページベースURL
