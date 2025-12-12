@@ -72,9 +72,7 @@ body {
 }
 
 .progress-indicator-header {
-  padding: 8px 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 0;
 }
 
 .progress-indicator-header.hidden {
@@ -338,7 +336,6 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
   margin-bottom: 15px;
   flex-wrap: wrap;
 }
@@ -348,7 +345,8 @@ h1 {
   height: 16px;
   border-radius: 2px;
   display: inline-block;
-  border: 2px solid #667eea;
+  outline: 1px solid #999;
+  outline-offset: -2px;
   background: #999;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -357,12 +355,12 @@ h1 {
 }
 
 .progress-dot:hover {
-  transform: scale(1.1);
+  outline: 1px solid #444444;
   box-shadow: 0 2px 8px rgba(102,126,234,0.4);
 }
 
 .progress-dot.answered {
-  background: #667eea;
+  background: #96fcb8;
 }
 
 .progress-dot.unanswered {
@@ -370,9 +368,7 @@ h1 {
 }
 
 .progress-dot.current {
-  border-width: 2px;
-  border-color: #ff6b6b;
-  transform: scale(1.2);
+  outline: 1px solid #ff8800;
 }
 
 /* 問題表示 */
