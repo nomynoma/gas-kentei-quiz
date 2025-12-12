@@ -1257,5 +1257,5 @@ function showUltraCertificate() {
   currentLevelIndex = 3;
 
   // 合格証生成（既存の関数を使用）
-  generateCertificate('超級');
+  showCertificate();
 }
