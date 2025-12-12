@@ -660,13 +660,14 @@ function showSectionResult(){
 
 // 合格証明書を表示
 function showCertificate(){
-  const levelName = levels[currentLevelIndex];
+  // 超級モード（currentLevelIndex = 3）の場合は「超級」
+  const levelName = currentLevelIndex === 3 ? '超級' : levels[currentLevelIndex];
   const today = new Date();
   const dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
 
   // ジャンル番号を取得（config.jsのGENRE_NAMESから）
   const genreNumber = getGenreNumber(currentGenre);
-  const levelNumber = currentLevelIndex + 1; // 0:初級→1, 1:中級→2, 2:上級→3
+  const levelNumber = currentLevelIndex + 1; // 0:初級→1, 1:中級→2, 2:上級→3, 3:超級→4
 
   // 背景画像URLをマッピングから取得
   const mapKey = genreNumber + '-' + levelNumber;
