@@ -919,17 +919,39 @@ h1 {
 
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
+  .genre-container {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+
+  .genre-title {
+    font-size: 18px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+  }
+
   .difficulty-container {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    justify-items: center;
   }
 
   .difficulty-wrapper {
-    width: 40%;
+    width: 100%;
     justify-content: center;
   }
 
   .difficulty-btn {
-    flex: 1;
-    /* min-width: 100px; */
+    width: 100%;
+    max-width: 150px;
+    padding: 8px 10px;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .certificate-medal {
+    font-size: 20px;
+    right: -1.5rem;
   }
 }
