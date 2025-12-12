@@ -1151,7 +1151,7 @@ function showUltraQuestion() {
     }
 
     button.onclick = function() {
-      handleUltraAnswer(label);
+      handleUltraAnswer(value);
     };
 
     gridDiv.appendChild(button);
