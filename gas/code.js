@@ -543,6 +543,103 @@ function getUltraModeQuestions(genre) {
 }
 
 /**
+ * エクストラモード用：全ジャンル・全レベルの問題を取得
+ * @returns {Array} 全ジャンル・全レベルの問題をシャッフルした配列（ハッシュ値付き）
+ */
+function getAllQuestionsForExtraMode() {
+  var cache = CacheService.getScriptCache();
+  var genres = GENRES;
+  var levels = LEVELS;
+  var allQuestions = [];
+
+  // 全ジャンル・全レベルの問題を取得
+  for (var g = 0; g < genres.length; g++) {
+    var genre = genres[g];
+
+    for (var i = 0; i < levels.length; i++) {
+      var level = levels[i];
+      var cacheKey = 'q_' + genre + '_' + level;
+      var answerCacheKey = 'a_' + genre + '_' + level;
+
+      var cached = cache.get(cacheKey);
+      var answerCached = cache.get(answerCacheKey);
+
+      // キャッシュがない場合は自動リロード
+      if (!cached || !answerCached) {
+        Logger.log('エクストラモード: キャッシュが見つかりません: ' + cacheKey);
+        reloadQuestionCache();
+        cached = cache.get(cacheKey);
+        answerCached = cache.get(answerCacheKey);
+
+        if (!cached || !answerCached) {
+          Logger.log('エクストラモード: キャッシュの取得に失敗（スキップ）: ' + cacheKey);
+          continue; // このジャンル・レベルをスキップして次へ
+        }
+      }
+
+      var questions = JSON.parse(cached);
+      var answerMap = JSON.parse(answerCached);
+
+      // 各問題にハッシュ値を追加
+      for (var j = 0; j < questions.length; j++) {
+        var q = questions[j];
+        var correctAnswer = answerMap[q.id];
+
+        if (correctAnswer !== undefined) {
+          // 正解のハッシュ値を生成
+          q.correctHash = generateAnswerHash(correctAnswer);
+        }
+
+        // 選択肢をシャッフル（入力問題を除く）
+        if (q.selectionType !== 'input') {
+          var choices = [
+            q.choiceA || '',
+            q.choiceB || '',
+            q.choiceC || '',
+            q.choiceD || ''
+          ];
+
+          // 空の選択肢を除外
+          var validChoices = [];
+          for (var k = 0; k < choices.length; k++) {
+            if (choices[k]) {
+              validChoices.push(choices[k]);
+            }
+          }
+
+          // 選択肢をシャッフル（Fisher–Yates）
+          for (var k = validChoices.length - 1; k > 0; k--) {
+            var l = Math.floor(Math.random() * (k + 1));
+            var tmp = validChoices[k];
+            validChoices[k] = validChoices[l];
+            validChoices[l] = tmp;
+          }
+
+          // シャッフルした選択肢を再代入
+          q.choiceA = validChoices[0] || '';
+          q.choiceB = validChoices[1] || '';
+          q.choiceC = validChoices[2] || '';
+          q.choiceD = validChoices[3] || '';
+        }
+
+        allQuestions.push(q);
+      }
+    }
+  }
+
+  // 全問題をシャッフル（Fisher-Yates）
+  for (var i = allQuestions.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = allQuestions[i];
+    allQuestions[i] = allQuestions[j];
+    allQuestions[j] = tmp;
+  }
+
+  Logger.log('エクストラモード: 全ジャンル・全レベルの問題を' + allQuestions.length + '問取得しました');
+  return allQuestions;
+}
+
+/**
  * 正解のハッシュ値を生成
  * @param {string|Array} answer - 正解（文字列または配列）
  * @returns {string} ハッシュ値

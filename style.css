@@ -1011,6 +1011,48 @@ h1 {
   transform: scale(1.2);
 }
 
+/* ========================================
+   エクストラステージ
+   ======================================== */
+
+/* エクストラステージコンテナ */
+.extra-stage-container {
+  margin-top: 30px;
+  padding: 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  position: relative;
+}
+
+/* エクストラステージボタン */
+.extra-stage-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 20px 40px;
+  min-width: 280px;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s;
+}
+
+.extra-stage-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* エクストラメダル */
+.extra-medal {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 32px;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
   .genre-container {

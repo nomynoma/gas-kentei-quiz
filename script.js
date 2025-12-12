@@ -32,6 +32,10 @@ let ultraCurrentQuestion = 0; // 超級モード用の現在の問題番号
 let ultraTimer = null; // 超級モード用のタイマーID
 let ultraTimeLeft = 10; // 超級モード用の残り時間（秒）
 
+// エクストラステージ専用の変数
+// ========================================
+let isExtraMode = false; // エクストラモード中かどうか（全ジャンル・全レベル）
+
 // 初期化：画像URLとジャンルボタンを動的に設定
 function initializeApp() {
   // Faviconの設定
@@ -930,6 +934,47 @@ function initializeGenreButtons() {
     genreContainer.appendChild(difficultyContainer);
     genreButtonsDiv.appendChild(genreContainer);
   });
+
+  // エクストラステージボタンを追加（全ジャンルの上級クリア後のみ表示）
+  const allGenresUltraCleared = GENRE_NAMES.every(genreName => {
+    const storageKey = genreName + '_上級';
+    return localStorage.getItem(storageKey) !== null;
+  });
+
+  if (allGenresUltraCleared) {
+    const extraContainer = document.createElement('div');
+    extraContainer.className = 'extra-stage-container';
+
+    const extraBtn = document.createElement('button');
+    extraBtn.className = 'btn extra-stage-btn';
+    extraBtn.textContent = '🏆 エクストラステージ 🏆';
+    extraBtn.onclick = function() {
+      startUltraMode(); // 引数なし = エクストラモード
+    };
+
+    extraContainer.appendChild(extraBtn);
+
+    // エクストラステージの合格証バッジ
+    const extraCertKey = 'エクストラステージ_合格';
+    const extraCertData = localStorage.getItem(extraCertKey);
+
+    if (extraCertData) {
+      const badgeLink = document.createElement('a');
+      badgeLink.href = base64ToBlobUrl(extraCertData);
+      badgeLink.target = '_blank';
+      badgeLink.className = 'certificate-medal extra-medal';
+      badgeLink.title = 'エクストラステージ合格証を別窓で開く';
+      badgeLink.textContent = '👑';
+
+      badgeLink.onclick = function(e) {
+        e.stopPropagation();
+      };
+
+      extraContainer.appendChild(badgeLink);
+    }
+
+    genreButtonsDiv.appendChild(extraContainer);
+  }
 }
 
 // Xで共有（合格時）
@@ -1046,35 +1091,60 @@ async function hashAnswer(answer) {
 
 /**
  * 超級モードを開始
- * @param {string} genre - ジャンル名
+ * @param {string} genre - ジャンル名（省略時は全ジャンル・全レベル = エクストラモード）
  */
 function startUltraMode(genre) {
   isUltraMode = true;
-  currentGenre = genre;
+  isExtraMode = !genre; // ジャンルが指定されていない場合はエクストラモード
+  currentGenre = genre || 'エクストラステージ';
   ultraCurrentQuestion = 0;
 
   showScreen('loading');
 
   // GASから超級モード用の問題を取得
-  google.script.run
-    .withSuccessHandler(function(questionsData) {
-      ultraQuestions = questionsData;
+  if (isExtraMode) {
+    // エクストラモード：全ジャンル・全レベルの問題を取得
+    google.script.run
+      .withSuccessHandler(function(questionsData) {
+        ultraQuestions = questionsData;
 
-      if (ultraQuestions.length === 0) {
-        alert('問題の取得に失敗しました');
+        if (ultraQuestions.length === 0) {
+          alert('問題の取得に失敗しました');
+          backToGenreSelection();
+          return;
+        }
+
+        // 最初の問題を表示
+        showUltraQuestion();
+      })
+      .withFailureHandler(function(error) {
+        console.error('エクストラモード: 問題取得エラー', error);
+        alert('問題の読み込みに失敗しました: ' + error.message);
         backToGenreSelection();
-        return;
-      }
+      })
+      .getAllQuestionsForExtraMode();
+  } else {
+    // 超級モード：特定ジャンルの全レベル問題を取得
+    google.script.run
+      .withSuccessHandler(function(questionsData) {
+        ultraQuestions = questionsData;
 
-      // 最初の問題を表示
-      showUltraQuestion();
-    })
-    .withFailureHandler(function(error) {
-      console.error('超級モード: 問題取得エラー', error);
-      alert('問題の読み込みに失敗しました: ' + error.message);
-      backToGenreSelection();
-    })
-    .getUltraModeQuestions(genre);
+        if (ultraQuestions.length === 0) {
+          alert('問題の取得に失敗しました');
+          backToGenreSelection();
+          return;
+        }
+
+        // 最初の問題を表示
+        showUltraQuestion();
+      })
+      .withFailureHandler(function(error) {
+        console.error('超級モード: 問題取得エラー', error);
+        alert('問題の読み込みに失敗しました: ' + error.message);
+        backToGenreSelection();
+      })
+      .getUltraModeQuestions(genre);
+  }
 }
 
 /**
