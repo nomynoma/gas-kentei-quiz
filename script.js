@@ -982,7 +982,8 @@ function shareToX(){
   const levelName = levels[currentLevelIndex];
   const levelText = currentLevelIndex === 2 ? '上級全問正解' : levelName + '合格';
   const text = 'クイズアプリで' + currentGenre + 'の' + levelText + 'しました！君も挑戦してみよう！';
-  const url = window.location.origin + window.location.pathname;
+  // GitHub PagesのURLを使用（config.jsで定義）
+  const url = HOSTING_BASE_URL;
   const twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
   window.open(twitterUrl, '_blank', 'width=550,height=420');
 }
@@ -991,7 +992,8 @@ function shareToX(){
 function shareFailToX(){
   const levelName = levels[currentLevelIndex];
   const text = 'クイズアプリで' + currentGenre + 'の' + levelName + 'に挑戦したよ！' + score + '/' + questions.length + '問正解！君も挑戦してみよう！';
-  const url = window.location.origin + window.location.pathname;
+  // GitHub PagesのURLを使用（config.jsで定義）
+  const url = HOSTING_BASE_URL;
   const twitterUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
   window.open(twitterUrl, '_blank', 'width=550,height=420');
 }
