@@ -21,7 +21,6 @@ body {
   top: 0;
   z-index: 100;
   background: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .header-area {
@@ -85,10 +84,7 @@ body {
 }
 
 .container {
-  background: white;
-  border-radius: 15px;
   padding: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   width: 90%;
   max-width: 400px;
   margin: 20px auto;
@@ -719,7 +715,6 @@ h1 {
   }
 
   body {
-    padding: 10px;
     min-height: auto;
   }
 
@@ -917,12 +912,10 @@ h1 {
 
 /* ジャンルコンテナ（枠線付き） */
 .genre-container {
-  border: 2px solid #667eea;
-  border-radius: 12px;
   padding: 15px;
   margin-bottom: 20px;
-  background: #f8f9fa;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  background: white;
+  border-radius: 10px;
 }
 
 /* ジャンル名タイトル */
