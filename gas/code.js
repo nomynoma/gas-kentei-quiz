@@ -137,14 +137,17 @@ function reloadSingleCache(genre, level) {
   var data = sheet.getDataRange().getValues();
   var questions = [];
   var answerMap = {};
+  var hintMap = {};
 
   // 指定されたレベルの問題だけを抽出
   for (var r = 1; r < data.length; r++) {
     if (data[r][1] !== level) continue;
 
+    var questionId = data[r][0];
+
     // ---- 出題用（正解なし） ----
     questions.push({
-      id: data[r][0],
+      id: questionId,
       level: data[r][1],
       selectionType: (data[r][2] || 'single').toLowerCase(),
       displayType: (data[r][3] || 'text').toLowerCase(),
@@ -155,10 +158,16 @@ function reloadSingleCache(genre, level) {
       choiceD: data[r][8]
     });
 
+    // ---- ヒント情報 ----
+    hintMap[questionId] = {
+      question: data[r][4] || '',
+      hintUrl: data[r][10] || '',
+      hintText: data[r][11] || ''
+    };
+
     // ---- 判定用 ----
-    var id = data[r][0];
     var ans = data[r][9];
-    if (!id || ans === '') continue;
+    if (!questionId || ans === '') continue;
 
     var selectionType = data[r][2];
     if (selectionType !== 'input') {
@@ -170,11 +179,11 @@ function reloadSingleCache(genre, level) {
         D: data[r][8]
       };
 
-      answerMap[id] = correctLabels
+      answerMap[questionId] = correctLabels
         .map(function(c) { return labelToText[c]; })
         .filter(Boolean);
     } else {
-      answerMap[id] = ans.toString().trim().toUpperCase();
+      answerMap[questionId] = ans.toString().trim().toUpperCase();
     }
   }
 
@@ -188,6 +197,12 @@ function reloadSingleCache(genre, level) {
   cache.put(
     'a_' + genre + '_' + level,
     JSON.stringify(answerMap),
+    604800
+  );
+
+  cache.put(
+    'h_' + genre + '_' + level,
+    JSON.stringify(hintMap),
     604800
   );
 }
@@ -243,13 +258,16 @@ function reloadQuestionCache() {
 
       var questions = [];
       var answerMap = {};
+      var hintMap = {};
 
       for (var r = 1; r < data.length; r++) {
         if (data[r][1] !== level) continue;
 
+        var questionId = data[r][0];
+
         // ---- 出題用（正解なし） ----
         questions.push({
-          id: data[r][0],
+          id: questionId,
           level: data[r][1],
           selectionType: (data[r][2] || 'single').toLowerCase(),
           displayType: (data[r][3] || 'text').toLowerCase(),
@@ -260,10 +278,16 @@ function reloadQuestionCache() {
           choiceD: data[r][8]
         });
 
+        // ---- ヒント情報 ----
+        hintMap[questionId] = {
+          question: data[r][4] || '',
+          hintUrl: data[r][10] || '',
+          hintText: data[r][11] || ''
+        };
+
         // ---- 判定用 ----
-        var id = data[r][0];
         var ans = data[r][9];
-        if (!id || ans === '') continue;
+        if (!questionId || ans === '') continue;
 
         var selectionType = data[r][2];
         if (selectionType !== 'input') {
@@ -275,11 +299,11 @@ function reloadQuestionCache() {
             D: data[r][8]
           };
 
-          answerMap[id] = correctLabels
+          answerMap[questionId] = correctLabels
             .map(function(c) { return labelToText[c]; })
             .filter(Boolean);
         } else {
-          answerMap[id] = ans.toString().trim().toUpperCase();
+          answerMap[questionId] = ans.toString().trim().toUpperCase();
         }
       }
 
@@ -292,6 +316,12 @@ function reloadQuestionCache() {
       cache.put(
         'a_' + genreName + '_' + level,
         JSON.stringify(answerMap),
+        604800  // 7日間（24時間 × 7日 = 604800秒）
+      );
+
+      cache.put(
+        'h_' + genreName + '_' + level,
+        JSON.stringify(hintMap),
         604800  // 7日間（24時間 × 7日 = 604800秒）
       );
     }
@@ -353,78 +383,106 @@ function clearQuestionCache() {
  * @return {Object} { results: [true, false, ...], wrongAnswers: [{questionNumber, question, userAnswer, hintText, hintUrl}, ...] }
  */
 function judgeAllAnswers(payload) {
-  Logger.log('judgeAllAnswers payload: %s', JSON.stringify(payload));
+  try {
+    Logger.log('judgeAllAnswers payload: %s', JSON.stringify(payload));
 
-  var cache = CacheService.getScriptCache();
-  var answerCacheKey = 'a_' + payload.genre + '_' + payload.level;
-  var answerMap = JSON.parse(cache.get(answerCacheKey) || '{}');
+    var cache = CacheService.getScriptCache();
+    var answerCacheKey = 'a_' + payload.genre + '_' + payload.level;
+    var answerMap = JSON.parse(cache.get(answerCacheKey) || '{}');
 
-  if (Object.keys(answerMap).length === 0) {
-    throw new Error('正解データが見つかりません: ' + answerCacheKey);
+    if (Object.keys(answerMap).length === 0) {
+      throw new Error('正解データが見つかりません: ' + answerCacheKey);
+    }
+
+    // ヒント情報をキャッシュから取得（新しいキャッシュキー）
+    var hintCacheKey = 'h_' + payload.genre + '_' + payload.level;
+    var hintMap = {};
+
+    try {
+      var cachedHints = cache.get(hintCacheKey);
+      if (cachedHints) {
+        hintMap = JSON.parse(cachedHints);
+      } else {
+        // キャッシュがない場合はスプレッドシートから取得
+        Logger.log('ヒントキャッシュが見つかりません。スプレッドシートから取得します');
+        hintMap = loadHintsFromSheet(payload.genre, payload.level);
+        // キャッシュに保存（7日間）
+        cache.put(hintCacheKey, JSON.stringify(hintMap), 604800);
+      }
+    } catch (e) {
+      Logger.log('ヒント情報の取得に失敗: ' + e);
+      // ヒント情報がなくても採点は継続
+    }
+
+    // 各問題の正誤を判定
+    var results = [];
+    var wrongAnswers = [];
+
+    for (var i = 0; i < payload.answers.length; i++) {
+      var userAnswer = payload.answers[i];
+      var correctAnswer = answerMap[userAnswer.questionId];
+
+      if (correctAnswer === undefined) {
+        Logger.log('警告: 問題ID ' + userAnswer.questionId + ' の正解が見つかりません');
+        results.push(false);
+        continue;
+      }
+
+      var isCorrect = checkAnswer(userAnswer.answer, correctAnswer);
+      results.push(isCorrect);
+
+      // 誤答の場合、詳細情報を追加
+      if (!isCorrect) {
+        var hintData = hintMap[userAnswer.questionId] || {};
+        wrongAnswers.push({
+          questionNumber: i + 1,
+          question: hintData.question || '',
+          userAnswer: formatUserAnswer(userAnswer.answer),
+          hintText: hintData.hintText || '',
+          hintUrl: hintData.hintUrl || ''
+        });
+      }
+
+      Logger.log('問題ID: %s, ユーザー回答: %s, 正解: %s, 判定: %s',
+        userAnswer.questionId,
+        JSON.stringify(userAnswer.answer),
+        JSON.stringify(correctAnswer),
+        isCorrect);
+    }
+
+    Logger.log('採点結果: %s', JSON.stringify(results));
+    Logger.log('誤答数: %s', wrongAnswers.length);
+
+    return {
+      results: results,
+      wrongAnswers: wrongAnswers
+    };
+  } catch (error) {
+    Logger.log('judgeAllAnswers エラー: ' + error);
+    throw error;
   }
+}
 
-  // スプレッドシートから問題データ（ヒント含む）を取得
+/**
+ * スプレッドシートからヒント情報を読み込む
+ */
+function loadHintsFromSheet(genre, level) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(payload.genre);
+  var sheet = ss.getSheetByName(genre);
   var data = sheet.getDataRange().getValues();
+  var hintMap = {};
 
-  // 問題IDをキーにしたマップを作成（ヒント情報付き）
-  var questionDataMap = {};
   for (var r = 1; r < data.length; r++) {
-    if (data[r][1] === payload.level) {
-      questionDataMap[data[r][0]] = {
-        question: data[r][4],
-        hintUrl: data[r][10] || '',    // K列（11番目）
-        hintText: data[r][11] || ''     // L列（12番目）
+    if (data[r][1] === level) {
+      hintMap[data[r][0]] = {
+        question: data[r][4] || '',
+        hintUrl: data[r][10] || '',
+        hintText: data[r][11] || ''
       };
     }
   }
 
-  // 各問題の正誤を判定
-  var results = [];
-  var wrongAnswers = [];
-
-  for (var i = 0; i < payload.answers.length; i++) {
-    var userAnswer = payload.answers[i];
-    var correctAnswer = answerMap[userAnswer.questionId];
-
-    if (correctAnswer === undefined) {
-      Logger.log('警告: 問題ID ' + userAnswer.questionId + ' の正解が見つかりません');
-      results.push(false);
-      continue;
-    }
-
-    var isCorrect = checkAnswer(userAnswer.answer, correctAnswer);
-    results.push(isCorrect);
-
-    // 誤答の場合、詳細情報を追加
-    if (!isCorrect) {
-      var questionData = questionDataMap[userAnswer.questionId];
-      if (questionData) {
-        wrongAnswers.push({
-          questionNumber: i + 1,
-          question: questionData.question,
-          userAnswer: formatUserAnswer(userAnswer.answer),
-          hintText: questionData.hintText,
-          hintUrl: questionData.hintUrl
-        });
-      }
-    }
-
-    Logger.log('問題ID: %s, ユーザー回答: %s, 正解: %s, 判定: %s',
-      userAnswer.questionId,
-      JSON.stringify(userAnswer.answer),
-      JSON.stringify(correctAnswer),
-      isCorrect);
-  }
-
-  Logger.log('採点結果: %s', JSON.stringify(results));
-  Logger.log('誤答数: %s', wrongAnswers.length);
-
-  return {
-    results: results,
-    wrongAnswers: wrongAnswers
-  };
+  return hintMap;
 }
 
 /**
