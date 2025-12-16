@@ -7,6 +7,75 @@ var GENRES = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4'
 // ⚠️ 重要: この配列は script.js の levels と一致させる必要があります
 var LEVELS = ['初級', '中級', '上級'];
 
+// 基本設定
+var ALLOWED_REFERRER = 'https://nomynoma.github.io';
+var RATE_LIMIT_WINDOW = 60;
+var RATE_LIMIT_MAX_REQUESTS = 10;
+
+// ========================================
+// 内部関数
+// ========================================
+
+/**
+ * リクエストの検証
+ */
+function checkReferrer(referrerUrl) {
+  try {
+    if (!referrerUrl) {
+      Logger.log('検証エラー: パラメータ不足');
+      return false;
+    }
+
+    var url = referrerUrl.toLowerCase();
+    var allowedHost = ALLOWED_REFERRER.toLowerCase();
+
+    if (url.indexOf(allowedHost) === 0) {
+      return true;
+    }
+
+    Logger.log('検証失敗: ' + referrerUrl);
+    return false;
+  } catch (error) {
+    Logger.log('検証エラー: ' + error);
+    return false;
+  }
+}
+
+/**
+ * リクエストの制御
+ */
+function checkRateLimit(userId) {
+  try {
+    if (!userId) {
+      Logger.log('制御エラー: ID不足');
+      return false;
+    }
+
+    var cache = CacheService.getScriptCache();
+    var rateLimitKey = 'rate_' + userId;
+    var cachedCount = cache.get(rateLimitKey);
+
+    if (!cachedCount) {
+      cache.put(rateLimitKey, '1', RATE_LIMIT_WINDOW);
+      return true;
+    }
+
+    var requestCount = parseInt(cachedCount);
+
+    if (requestCount >= RATE_LIMIT_MAX_REQUESTS) {
+      Logger.log('制御発動: ' + userId + ' (' + requestCount + '回)');
+      return false;
+    }
+
+    cache.put(rateLimitKey, (requestCount + 1).toString(), RATE_LIMIT_WINDOW);
+    return true;
+
+  } catch (error) {
+    Logger.log('制御エラー: ' + error);
+    return true;
+  }
+}
+
 function doGet(e) {
   // goukakuパラメータがある場合は合格証画像表示画面を返す
   if (e.parameter && e.parameter.goukaku) {
@@ -34,9 +103,19 @@ function include(filename) {
  * セクションごとの問題を取得（キャッシュ対応版・自動リロード対応・マルチユーザー対応）
  * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
  * @param {string} level - "初級", "中級", "上級"
+ * @param {string} userId - ユーザーID（レート制限用、オプション）
+ * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} ランダム10問
  */
-function getQuestions(genre, level) {
+function getQuestions(genre, level, userId, referrer) {
+  if (!checkReferrer(referrer)) {
+    throw new Error('アクセスできません');
+  }
+
+  if (userId && !checkRateLimit(userId)) {
+    throw new Error('しばらく待ってから再度お試しください');
+  }
+
   var cache = CacheService.getScriptCache();
   var cacheKey = 'q_' + genre + '_' + level;
 
@@ -380,11 +459,21 @@ function clearQuestionCache() {
  * @param {string} payload.level - レベル名
  * @param {Array} payload.answers - [{questionId, answer}, ...] ユーザーの回答配列
  * @param {Array} payload.questions - 問題データ（フロントから送信）
+ * @param {string} payload.userId - ユーザーID（レート制限用、オプション）
+ * @param {string} payload.referrer - リファラURL（セキュリティチェック用、オプション）
  * @return {Object} { results: [true, false, ...], wrongAnswers: [{questionNumber, question, userAnswer, hintText, hintUrl}, ...] }
  */
 function judgeAllAnswers(payload) {
   try {
     Logger.log('judgeAllAnswers payload: %s', JSON.stringify(payload));
+
+    if (!checkReferrer(payload.referrer)) {
+      throw new Error('アクセスできません');
+    }
+
+    if (payload.userId && !checkRateLimit(payload.userId)) {
+      throw new Error('しばらく待ってから再度お試しください');
+    }
 
     var cache = CacheService.getScriptCache();
     var answerCacheKey = 'a_' + payload.genre + '_' + payload.level;
@@ -602,9 +691,19 @@ function judgeAnswer(payload) {
 /**
  * 超級モード用: 指定ジャンルの全レベル問題を取得（ハッシュ値付き）
  * @param {string} genre - ジャンル名
+ * @param {string} userId - ユーザーID（レート制限用、オプション）
+ * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} 全レベルの問題をシャッフルした配列（ハッシュ値付き）
  */
-function getUltraModeQuestions(genre) {
+function getUltraModeQuestions(genre, userId, referrer) {
+  if (!checkReferrer(referrer)) {
+    throw new Error('アクセスできません');
+  }
+
+  if (userId && !checkRateLimit(userId)) {
+    throw new Error('しばらく待ってから再度お試しください');
+  }
+
   var cache = CacheService.getScriptCache();
   var levels = LEVELS;
   var allQuestions = [];
@@ -693,9 +792,19 @@ function getUltraModeQuestions(genre) {
 
 /**
  * エクストラモード用：全ジャンル・全レベルの問題を取得
+ * @param {string} userId - ユーザーID（レート制限用、オプション）
+ * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} 全ジャンル・全レベルの問題をシャッフルした配列（ハッシュ値付き）
  */
-function getAllQuestionsForExtraMode() {
+function getAllQuestionsForExtraMode(userId, referrer) {
+  if (!checkReferrer(referrer)) {
+    throw new Error('アクセスできません');
+  }
+
+  if (userId && !checkRateLimit(userId)) {
+    throw new Error('しばらく待ってから再度お試しください');
+  }
+
   var cache = CacheService.getScriptCache();
   var genres = GENRES;
   var levels = LEVELS;
