@@ -8,38 +8,12 @@ var GENRES = ['ジャンル1', 'ジャンル2', 'ジャンル3', 'ジャンル4'
 var LEVELS = ['初級', '中級', '上級'];
 
 // 基本設定
-var ALLOWED_REFERRER = 'https://nomynoma.github.io';
 var RATE_LIMIT_WINDOW = 60;
 var RATE_LIMIT_MAX_REQUESTS = 10;
 
 // ========================================
 // 内部関数
 // ========================================
-
-/**
- * リクエストの検証
- */
-function checkReferrer(referrerUrl) {
-  try {
-    if (!referrerUrl) {
-      Logger.log('検証エラー: パラメータ不足');
-      return false;
-    }
-
-    var url = referrerUrl.toLowerCase();
-    var allowedHost = ALLOWED_REFERRER.toLowerCase();
-
-    if (url.indexOf(allowedHost) === 0) {
-      return true;
-    }
-
-    Logger.log('検証失敗: ' + referrerUrl);
-    return false;
-  } catch (error) {
-    Logger.log('検証エラー: ' + error);
-    return false;
-  }
-}
 
 /**
  * リクエストの制御
@@ -104,14 +78,9 @@ function include(filename) {
  * @param {string} genreName - "ジャンル1" ～ "ジャンル6"
  * @param {string} level - "初級", "中級", "上級"
  * @param {string} userId - ユーザーID（レート制限用、オプション）
- * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} ランダム10問
  */
-function getQuestions(genre, level, userId, referrer) {
-  if (!checkReferrer(referrer)) {
-    throw new Error('アクセスできません');
-  }
-
+function getQuestions(genre, level, userId) {
   if (userId && !checkRateLimit(userId)) {
     throw new Error('しばらく待ってから再度お試しください');
   }
@@ -460,16 +429,11 @@ function clearQuestionCache() {
  * @param {Array} payload.answers - [{questionId, answer}, ...] ユーザーの回答配列
  * @param {Array} payload.questions - 問題データ（フロントから送信）
  * @param {string} payload.userId - ユーザーID（レート制限用、オプション）
- * @param {string} payload.referrer - リファラURL（セキュリティチェック用、オプション）
  * @return {Object} { results: [true, false, ...], wrongAnswers: [{questionNumber, question, userAnswer, hintText, hintUrl}, ...] }
  */
 function judgeAllAnswers(payload) {
   try {
     Logger.log('judgeAllAnswers payload: %s', JSON.stringify(payload));
-
-    if (!checkReferrer(payload.referrer)) {
-      throw new Error('アクセスできません');
-    }
 
     if (payload.userId && !checkRateLimit(payload.userId)) {
       throw new Error('しばらく待ってから再度お試しください');
@@ -692,14 +656,9 @@ function judgeAnswer(payload) {
  * 超級モード用: 指定ジャンルの全レベル問題を取得（ハッシュ値付き）
  * @param {string} genre - ジャンル名
  * @param {string} userId - ユーザーID（レート制限用、オプション）
- * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} 全レベルの問題をシャッフルした配列（ハッシュ値付き）
  */
-function getUltraModeQuestions(genre, userId, referrer) {
-  if (!checkReferrer(referrer)) {
-    throw new Error('アクセスできません');
-  }
-
+function getUltraModeQuestions(genre, userId) {
   if (userId && !checkRateLimit(userId)) {
     throw new Error('しばらく待ってから再度お試しください');
   }
@@ -793,14 +752,9 @@ function getUltraModeQuestions(genre, userId, referrer) {
 /**
  * エクストラモード用：全ジャンル・全レベルの問題を取得
  * @param {string} userId - ユーザーID（レート制限用、オプション）
- * @param {string} referrer - リファラURL（セキュリティチェック用、オプション）
  * @returns {Array} 全ジャンル・全レベルの問題をシャッフルした配列（ハッシュ値付き）
  */
-function getAllQuestionsForExtraMode(userId, referrer) {
-  if (!checkReferrer(referrer)) {
-    throw new Error('アクセスできません');
-  }
-
+function getAllQuestionsForExtraMode(userId) {
   if (userId && !checkRateLimit(userId)) {
     throw new Error('しばらく待ってから再度お試しください');
   }

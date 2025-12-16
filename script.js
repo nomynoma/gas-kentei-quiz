@@ -280,7 +280,7 @@ function loadLevel(genre, level){
           alert('問題の読み込みに失敗しました: '+err);
           showScreen('genreScreen');
         })
-        .getQuestions(genre, level, nickname, window.location.href);
+        .getQuestions(genre, level, nickname);
     }, 50);
   });
 }
@@ -624,8 +624,7 @@ function submitAllAnswers() {
       genre: currentGenre,
       level: levels[currentLevelIndex],
       answers: userAnswers,
-      userId: nickname,
-      referrer: window.location.href
+      userId: nickname
     });
 }
 
@@ -1177,7 +1176,7 @@ function startUltraMode(genre) {
         alert('問題の読み込みに失敗しました: ' + error.message);
         backToGenreSelection();
       })
-      .getAllQuestionsForExtraMode(nickname, window.location.href);
+      .getAllQuestionsForExtraMode(nickname);
   } else {
     // 超級モード：特定ジャンルの全レベル問題を取得
     google.script.run
@@ -1198,7 +1197,7 @@ function startUltraMode(genre) {
         alert('問題の読み込みに失敗しました: ' + error.message);
         backToGenreSelection();
       })
-      .getUltraModeQuestions(genre, nickname, window.location.href);
+      .getUltraModeQuestions(genre, nickname);
   }
 }
 
