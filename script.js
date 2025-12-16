@@ -607,9 +607,13 @@ function submitAllAnswers() {
   showGradingLoading();
   
   google.script.run
-    .withSuccessHandler(function(results){
-      // results = [true, false, true, ...] (正誤の配列)
-      score = results.filter(r => r).length;
+    .withSuccessHandler(function(data){
+      // data = { results: [true, false, ...], wrongAnswers: [...] }
+      score = data.results.filter(r => r).length;
+
+      // 誤答情報をグローバル変数に保存
+      window.wrongAnswersData = data.wrongAnswers || [];
+
       showSectionResult();
     })
     .withFailureHandler(function(err){
@@ -646,16 +650,63 @@ function showGradingLoading() {
 
 // レベル結果
 function showSectionResult(){
-  const levelName = levels[currentLevelIndex];
-
   if(score === questions.length){
     // 合格：合格証明書を表示
     showCertificate();
   } else {
     // 不合格：不合格画面を表示
     document.getElementById('failResultText').textContent =
-      currentGenre + ' - ' + levelName + 'の結果は ' + score + ' / ' + questions.length + ' 問でした';
+      score + ' / ' + questions.length + ' 問正解！';
+
+    // 誤答リストを表示
+    showWrongAnswers();
+
     showScreen('failScreen');
+  }
+}
+
+// 誤答リストを表示
+function showWrongAnswers() {
+  const wrongAnswers = window.wrongAnswersData || [];
+  const failScreen = document.getElementById('failScreen');
+
+  // 既存の誤答リストを削除
+  const existingList = document.getElementById('wrongAnswersList');
+  if (existingList) {
+    existingList.remove();
+  }
+
+  if (wrongAnswers.length === 0) {
+    return; // 誤答がない（全問正解）
+  }
+
+  // 誤答リストのHTML を生成
+  let wrongAnswersHtml = '<div id="wrongAnswersList" class="wrong-answers-list">';
+
+  wrongAnswers.forEach(function(item) {
+    wrongAnswersHtml += '<div class="wrong-answer-item">';
+    wrongAnswersHtml += '<div class="wrong-answer-header">Q' + item.questionNumber + '. ' + item.question + '</div>';
+    wrongAnswersHtml += '<div class="wrong-answer-user">あなたの解答：' + item.userAnswer + '</div>';
+
+    if (item.hintText || item.hintUrl) {
+      wrongAnswersHtml += '<div class="wrong-answer-hint">ヒント：';
+      if (item.hintUrl) {
+        wrongAnswersHtml += '<a href="' + item.hintUrl + '" target="_blank" rel="noopener noreferrer">' + (item.hintText || 'こちら') + '</a>';
+      } else {
+        wrongAnswersHtml += item.hintText;
+      }
+      wrongAnswersHtml += '</div>';
+    }
+
+    wrongAnswersHtml += '</div>';
+  });
+
+  wrongAnswersHtml += '</div>';
+
+  // 不合格画面の「もう一度挑戦する」ボタンの前に挿入
+  const retryButton = failScreen.querySelector('.btn:not(.btn-twitter)');
+  if (retryButton) {
+    retryButton.insertAdjacentHTML('beforebegin', wrongAnswersHtml);
   }
 }
 

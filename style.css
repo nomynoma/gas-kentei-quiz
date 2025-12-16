@@ -1047,6 +1047,63 @@ h1 {
   font-size: 32px;
 }
 
+/* ========================================
+   誤答リスト（不合格画面）
+   ======================================== */
+
+.wrong-answers-list {
+  margin: 20px 0;
+  text-align: left;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.wrong-answer-item {
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #fff8e1;
+  border-left: 4px solid #ff9800;
+  border-radius: 5px;
+}
+
+.wrong-answer-item:last-child {
+  margin-bottom: 0;
+}
+
+.wrong-answer-header {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.wrong-answer-user {
+  color: #d32f2f;
+  margin-bottom: 8px;
+  font-size: 14px;
+  padding-left: 10px;
+}
+
+.wrong-answer-hint {
+  color: #1976d2;
+  font-size: 13px;
+  padding-left: 10px;
+}
+
+.wrong-answer-hint a {
+  color: #1976d2;
+  text-decoration: underline;
+}
+
+.wrong-answer-hint a:hover {
+  color: #0d47a1;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
   .genre-container {
