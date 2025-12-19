@@ -51,7 +51,14 @@ function checkRateLimit(userId) {
 }
 
 function doGet(e) {
-  // goukakuパラメータがある場合は合格証画像表示画面を返す
+  // 合格証表示リクエスト（新方式）
+  if (e.parameter && e.parameter.key) {
+    return HtmlService.createHtmlOutputFromFile('certificate')
+      .setTitle('合格証')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  // goukakuパラメータがある場合は合格証画像表示画面を返す（旧方式・互換性のため残す）
   if (e.parameter && e.parameter.goukaku) {
     var template = HtmlService.createTemplateFromFile('certificate_view');
     template.uuid = e.parameter.goukaku;

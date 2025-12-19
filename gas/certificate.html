@@ -125,7 +125,6 @@
         downloadLink.href = imageData;
 
         // ファイル名を設定（キーから生成）
-        // 例: cert_ジャンル1_初級 → ジャンル1_初級_合格証.webp
         const filename = key.replace('cert_', '') + '_合格証.webp';
         downloadLink.download = filename;
 
