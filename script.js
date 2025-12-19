@@ -921,7 +921,7 @@ function initializeGenreButtons() {
 
       if (certificateData) {
         const badgeLink = document.createElement('a');
-        badgeLink.href = 'certificate.html?key=' + encodeURIComponent(storageKey);
+        badgeLink.href = HOSTING_BASE_URL + '/certificate.html?key=' + encodeURIComponent(storageKey);
         badgeLink.target = '_blank';
         badgeLink.className = 'certificate-medal';
         badgeLink.title = levelName + '合格証を別窓で開く';
@@ -968,7 +968,7 @@ function initializeGenreButtons() {
 
     if (ultraCertData) {
       const badgeLink = document.createElement('a');
-      badgeLink.href = 'certificate.html?key=' + encodeURIComponent(ultraCertKey);
+      badgeLink.href = HOSTING_BASE_URL + '/certificate.html?key=' + encodeURIComponent(ultraCertKey);
       badgeLink.target = '_blank';
       badgeLink.className = 'certificate-medal';
       badgeLink.title = '超級合格証を別窓で開く';
@@ -1012,7 +1012,7 @@ function initializeGenreButtons() {
 
     if (extraCertData) {
       const badgeLink = document.createElement('a');
-      badgeLink.href = 'certificate.html?key=' + encodeURIComponent(extraCertKey);
+      badgeLink.href = HOSTING_BASE_URL + '/certificate.html?key=' + encodeURIComponent(extraCertKey);
       badgeLink.target = '_blank';
       badgeLink.className = 'certificate-medal extra-medal';
       badgeLink.title = 'エクストラステージ合格証を別窓で開く';
