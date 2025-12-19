@@ -191,6 +191,19 @@
   </div>
 </div>
 
+<!-- 合格証モーダル -->
+<div id="certificateModal" class="certificate-modal" style="display: none;">
+  <div class="certificate-modal-overlay" onclick="closeCertificateModal()"></div>
+  <div class="certificate-modal-content">
+    <button class="certificate-modal-close" onclick="closeCertificateModal()">✕</button>
+    <img id="certificateModalImage" class="certificate-modal-image" alt="合格証明書">
+    <div class="certificate-modal-buttons">
+      <a id="certificateModalDownload" class="btn btn-green" download="">📥 ダウンロード</a>
+      <button class="btn btn-gray" onclick="closeCertificateModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- 外部JavaScriptファイル読み込み（GitHub Pages） -->
 <script src="https://nomynoma.github.io/gas-kentei-quiz/config.js"></script>
 <script src="https://nomynoma.github.io/gas-kentei-quiz/script.js"></script>

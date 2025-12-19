@@ -920,20 +920,19 @@ function initializeGenreButtons() {
       const certificateData = localStorage.getItem(storageKey);
 
       if (certificateData) {
-        const badgeLink = document.createElement('a');
-        badgeLink.href = GAS_DEPLOYMENT_URL + '?key=' + encodeURIComponent(storageKey);
-        badgeLink.target = '_blank';
-        badgeLink.className = 'certificate-medal';
-        badgeLink.title = levelName + '合格証を別窓で開く';
+        const badgeMedal = document.createElement('span');
+        badgeMedal.className = 'certificate-medal';
+        badgeMedal.title = levelName + '合格証を表示';
 
         const emoji = levelIndex === 0 ? '🥉' : levelIndex === 1 ? '🥈' : '🥇';
-        badgeLink.textContent = emoji;
+        badgeMedal.textContent = emoji;
 
-        badgeLink.onclick = function(e) {
+        badgeMedal.onclick = function(e) {
           e.stopPropagation();
+          openCertificateModal(storageKey);
         };
 
-        difficultyWrapper.appendChild(badgeLink);
+        difficultyWrapper.appendChild(badgeMedal);
       }
 
       difficultyContainer.appendChild(difficultyWrapper);
@@ -967,18 +966,17 @@ function initializeGenreButtons() {
     const ultraCertData = localStorage.getItem(ultraCertKey);
 
     if (ultraCertData) {
-      const badgeLink = document.createElement('a');
-      badgeLink.href = GAS_DEPLOYMENT_URL + '?key=' + encodeURIComponent(ultraCertKey);
-      badgeLink.target = '_blank';
-      badgeLink.className = 'certificate-medal';
-      badgeLink.title = '超級合格証を別窓で開く';
-      badgeLink.textContent = '🏆';
+      const badgeMedal = document.createElement('span');
+      badgeMedal.className = 'certificate-medal';
+      badgeMedal.title = '超級合格証を表示';
+      badgeMedal.textContent = '🏆';
 
-      badgeLink.onclick = function(e) {
+      badgeMedal.onclick = function(e) {
         e.stopPropagation();
+        openCertificateModal(ultraCertKey);
       };
 
-      ultraWrapper.appendChild(badgeLink);
+      ultraWrapper.appendChild(badgeMedal);
     }
 
     difficultyContainer.appendChild(ultraWrapper);
@@ -1011,18 +1009,17 @@ function initializeGenreButtons() {
     const extraCertData = localStorage.getItem(extraCertKey);
 
     if (extraCertData) {
-      const badgeLink = document.createElement('a');
-      badgeLink.href = GAS_DEPLOYMENT_URL + '?key=' + encodeURIComponent(extraCertKey);
-      badgeLink.target = '_blank';
-      badgeLink.className = 'certificate-medal extra-medal';
-      badgeLink.title = 'エクストラステージ合格証を別窓で開く';
-      badgeLink.textContent = '👑';
+      const badgeMedal = document.createElement('span');
+      badgeMedal.className = 'certificate-medal extra-medal';
+      badgeMedal.title = 'エクストラステージ合格証を表示';
+      badgeMedal.textContent = '👑';
 
-      badgeLink.onclick = function(e) {
+      badgeMedal.onclick = function(e) {
         e.stopPropagation();
+        openCertificateModal(extraCertKey);
       };
 
-      extraContainer.appendChild(badgeLink);
+      extraContainer.appendChild(badgeMedal);
     }
 
     genreButtonsDiv.appendChild(extraContainer);
@@ -1389,4 +1386,44 @@ function showUltraCertificate() {
 
   // 合格証生成（既存の関数を使用）
   showCertificate();
+}
+
+/**
+ * 合格証モーダルを開く
+ * @param {string} key - localStorageのキー（例: "ジャンル1_初級"）
+ */
+function openCertificateModal(key) {
+  // localStorageから合格証画像データを取得
+  const certificateData = localStorage.getItem(key);
+
+  if (!certificateData) {
+    console.error('合格証データが見つかりません:', key);
+    return;
+  }
+
+  // モーダル要素を取得
+  const modal = document.getElementById('certificateModal');
+  const modalImage = document.getElementById('certificateModalImage');
+  const downloadLink = document.getElementById('certificateModalDownload');
+
+  // 画像とダウンロードリンクを設定
+  modalImage.src = certificateData;
+  downloadLink.href = certificateData;
+
+  // ファイル名を設定
+  const filename = key + '_合格証.webp';
+  downloadLink.download = filename;
+
+  // モーダルを表示
+  modal.style.display = 'flex';
+
+  console.log('合格証モーダルを表示:', key);
+}
+
+/**
+ * 合格証モーダルを閉じる
+ */
+function closeCertificateModal() {
+  const modal = document.getElementById('certificateModal');
+  modal.style.display = 'none';
 }
