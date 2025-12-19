@@ -1397,7 +1397,6 @@ function openCertificateModal(key) {
   const certificateData = localStorage.getItem(key);
 
   if (!certificateData) {
-    console.error('合格証データが見つかりません:', key);
     return;
   }
 
@@ -1416,8 +1415,6 @@ function openCertificateModal(key) {
 
   // モーダルを表示
   modal.style.display = 'flex';
-
-  console.log('合格証モーダルを表示:', key);
 }
 
 /**
