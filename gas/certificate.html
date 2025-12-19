@@ -107,9 +107,8 @@
   </div>
 
   <script>
-    // URLパラメータからキーを取得
-    const urlParams = new URLSearchParams(window.location.search);
-    const key = urlParams.get('key');
+    // GASテンプレートからキーを取得
+    const key = '<?= key ?>';
 
     if (key) {
       // localStorageから画像データ取得

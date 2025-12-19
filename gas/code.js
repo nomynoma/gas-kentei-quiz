@@ -53,7 +53,9 @@ function checkRateLimit(userId) {
 function doGet(e) {
   // 合格証表示リクエスト
   if (e.parameter && e.parameter.key) {
-    return HtmlService.createHtmlOutputFromFile('certificate')
+    var template = HtmlService.createTemplateFromFile('certificate');
+    template.key = e.parameter.key;
+    return template.evaluate()
       .setTitle('合格証')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
