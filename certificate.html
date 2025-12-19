@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>合格証</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .certificate-container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-width: 95%;
+      text-align: center;
+    }
+    .certificate-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s;
+    }
+    .download-btn {
+      background: #4CAF50;
+      color: white;
+    }
+    .download-btn:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+    }
+    .back-btn {
+      background: #2196F3;
+      color: white;
+    }
+    .back-btn:hover {
+      background: #1976D2;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 500px;
+    }
+    .error h2 {
+      margin-top: 0;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .certificate-container {
+        padding: 15px;
+      }
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="certificateContainer" class="certificate-container">
+    <img id="certificateImage" class="certificate-image" alt="合格証明書">
+    <div class="button-group">
+      <a id="downloadLink" class="btn download-btn" download="">📥 ダウンロード</a>
+      <button class="btn back-btn" onclick="window.close()">← 戻る</button>
+    </div>
+  </div>
+
+  <div id="error" class="error" style="display:none;">
+    <h2>⚠️ 合格証が見つかりませんでした</h2>
+    <p>この合格証はまだ取得されていないか、ブラウザのデータが削除された可能性があります。</p>
+    <button class="btn back-btn" onclick="window.close()">← 戻る</button>
+  </div>
+
+  <script>
+    // URLパラメータからキーを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const key = urlParams.get('key');
+
+    if (key) {
+      // localStorageから画像データ取得
+      const imageData = localStorage.getItem(key);
+
+      if (imageData) {
+        // 画像表示
+        const img = document.getElementById('certificateImage');
+        img.src = imageData;
+
+        // ダウンロードリンク設定
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = imageData;
+
+        // ファイル名を設定（キーから生成）
+        // 例: cert_ジャンル1_初級 → ジャンル1_初級_合格証.webp
+        const filename = key.replace('cert_', '') + '_合格証.webp';
+        downloadLink.download = filename;
+
+        console.log('合格証を表示しました:', key);
+      } else {
+        // データがない場合
+        console.error('localStorageにデータが見つかりません:', key);
+        document.getElementById('certificateContainer').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+      }
+    } else {
+      // キーがない場合
+      console.error('URLパラメータにkeyが指定されていません');
+      document.getElementById('certificateContainer').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
