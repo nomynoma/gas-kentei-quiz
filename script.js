@@ -1203,6 +1203,14 @@ function startUltraMode(genre) {
           return;
         }
 
+        // デバッグ: 最初の数問のselectionTypeを確認
+        console.log('エクストラモード問題取得:', ultraQuestions.length + '問');
+        console.log('最初の5問のselectionType:', ultraQuestions.slice(0, 5).map(q => ({
+          id: q.id,
+          selectionType: q.selectionType,
+          displayType: q.displayType
+        })));
+
         // 最初の問題を表示
         showUltraQuestion();
       })
@@ -1223,6 +1231,14 @@ function startUltraMode(genre) {
           backToGenreSelection();
           return;
         }
+
+        // デバッグ: 最初の数問のselectionTypeを確認
+        console.log('超級モード問題取得:', ultraQuestions.length + '問');
+        console.log('最初の5問のselectionType:', ultraQuestions.slice(0, 5).map(q => ({
+          id: q.id,
+          selectionType: q.selectionType,
+          displayType: q.displayType
+        })));
 
         // 最初の問題を表示
         showUltraQuestion();
