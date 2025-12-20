@@ -1276,56 +1276,88 @@ function showUltraQuestion() {
   choicesDiv.innerHTML = '';
   const isImage = q.displayType === 'image';
   const isMultiple = q.answerType === 'multiple';
+  const isInput = q.selectionType === 'input';
 
-  // 選択肢マップを作成（通常問題と同じ）
-  const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
+  // 入力式問題の場合
+  if (isInput) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'ultraInputAnswer';
+    input.placeholder = '答えを入力してください';
+    input.className = 'answer-input';
 
-  const gridDiv = document.createElement('div');
-  gridDiv.className = 'image-grid';
+    // Enterキーで送信
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        submitUltraInputAnswer();
+      }
+    });
 
-  Object.keys(choiceMap).forEach(label => {
-    const value = choiceMap[label];
-    if (!value) return; // 空の選択肢はスキップ
+    choicesDiv.appendChild(input);
 
-    const button = document.createElement('button');
-    button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
-    button.dataset.label = label;
-    button.dataset.value = value;
-
-    if (isImage) {
-      button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
-                          <div class="image-choice-label">${label}</div>`;
-    } else {
-      const sanitizedHtml = DOMPurify.sanitize(value);
-      button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
-    }
-
-    if (isMultiple) {
-      // 複数選択：クリックで選択状態をトグル
-      button.onclick = function() {
-        toggleUltraChoice(button);
-      };
-    } else {
-      // 単一選択：クリックで即座に回答
-      button.onclick = function() {
-        submitUltraAnswer([value]);
-      };
-    }
-
-    gridDiv.appendChild(button);
-  });
-
-  choicesDiv.appendChild(gridDiv);
-
-  // 複数選択の場合は回答ボタンを追加
-  if (isMultiple) {
     const submitBtn = document.createElement('button');
     submitBtn.className = 'btn btn-primary ultra-submit-btn';
     submitBtn.textContent = '回答する';
     submitBtn.onclick = function() {
-      submitUltraMultipleAnswer();
+      submitUltraInputAnswer();
     };
     choicesDiv.appendChild(submitBtn);
+
+    // 入力欄にフォーカス
+    setTimeout(() => input.focus(), 100);
+
+  } else {
+    // 選択式問題の場合（従来通り）
+    // 選択肢マップを作成（通常問題と同じ）
+    const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
+
+    const gridDiv = document.createElement('div');
+    gridDiv.className = 'image-grid';
+
+    Object.keys(choiceMap).forEach(label => {
+      const value = choiceMap[label];
+      if (!value) return; // 空の選択肢はスキップ
+
+      const button = document.createElement('button');
+      button.className = 'btn choice-btn' + (isImage ? ' image-choice' : '');
+      button.dataset.label = label;
+      button.dataset.value = value;
+
+      if (isImage) {
+        button.innerHTML = `<img src="${encodeURIComponent(value)}" alt="選択肢${label}" onerror="this.src='https://via.placeholder.com/400x250?text=画像読込エラー'">
+                            <div class="image-choice-label">${label}</div>`;
+      } else {
+        const sanitizedHtml = DOMPurify.sanitize(value);
+        button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
+      }
+
+      if (isMultiple) {
+        // 複数選択：クリックで選択状態をトグル
+        button.onclick = function() {
+          toggleUltraChoice(button);
+        };
+      } else {
+        // 単一選択：クリックで即座に回答
+        button.onclick = function() {
+          submitUltraAnswer([value]);
+        };
+      }
+
+      gridDiv.appendChild(button);
+    });
+
+    choicesDiv.appendChild(gridDiv);
+
+    // 複数選択の場合は回答ボタンを追加
+    if (isMultiple) {
+      const submitBtn = document.createElement('button');
+      submitBtn.className = 'btn btn-primary ultra-submit-btn';
+      submitBtn.textContent = '回答する';
+      submitBtn.onclick = function() {
+        submitUltraMultipleAnswer();
+      };
+      choicesDiv.appendChild(submitBtn);
+    }
   }
 
   // タイマーをリセットして開始
@@ -1394,6 +1426,22 @@ function submitUltraMultipleAnswer() {
   }
 
   submitUltraAnswer(selectedValues);
+}
+
+/**
+ * 超級モードの入力式回答を送信
+ */
+function submitUltraInputAnswer() {
+  const input = document.getElementById('ultraInputAnswer');
+  if (!input) return;
+
+  const answer = input.value.trim();
+  if (answer === '') {
+    alert('答えを入力してください');
+    return;
+  }
+
+  submitUltraAnswer([answer]);
 }
 
 /**
