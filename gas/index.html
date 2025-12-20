@@ -132,6 +132,7 @@
     <div class="button-area">
       <button class="btn btn-green" onclick="downloadCertificate()">合格証をダウンロード</button>
       <button class="btn btn-twitter" onclick="shareToX()">𝕏 で共有する</button>
+      <button class="btn btn-score-register" id="registerScoreBtn" onclick="registerExtraScore(event)" style="display: none;">🏆 スコアを登録する</button>
       <button class="btn" id="certificateNextBtn" onclick="nextSection()">次のレベルへすすむ</button>
       <button class="btn btn-gray" id="certificateBackBtn" onclick="backToGenreSelection()">ジャンル選択へ戻る</button>
     </div>
@@ -164,6 +165,7 @@
       <span id="ultraFailNum"></span>問目でチャレンジ失敗しました
     </p>
     <div class="button-area">
+      <button class="btn btn-score-register" id="registerScoreFailBtn" onclick="registerExtraScoreFailed(event)" style="display: none;">🏆 スコアを登録する</button>
       <button class="btn" onclick="backToGenreSelection()">ジャンル選択へ戻る</button>
       <button class="btn btn-primary" onclick="retryUltraMode()">もう一度挑戦</button>
     </div>

@@ -653,11 +653,6 @@ function showGradingLoading() {
 // レベル結果
 function showSectionResult(){
   if(score === questions.length){
-    // エクストラモードの場合、スコアをサーバーに送信
-    if (isExtraMode) {
-      sendScoreToServer(score, questions.length);
-    }
-
     // 合格：合格証明書を表示
     showCertificate();
   } else {
@@ -1393,6 +1388,14 @@ function showUltraFailScreen() {
   const failNumEl = document.getElementById('ultraFailNum');
   failNumEl.textContent = ultraCurrentQuestion + 1;
 
+  // エクストラモードの場合、スコア登録ボタンを表示
+  if (isExtraMode) {
+    const registerBtn = document.getElementById('registerScoreFailBtn');
+    if (registerBtn) {
+      registerBtn.style.display = 'inline-block';
+    }
+  }
+
   showScreen('ultraFailScreen');
 }
 
@@ -1409,6 +1412,14 @@ function retryUltraMode() {
 function showUltraCertificate() {
   // 超級の合格証（レベルインデックス = 3）
   currentLevelIndex = 3;
+
+  // エクストラモードの場合、スコア登録ボタンを表示
+  if (isExtraMode) {
+    const registerBtn = document.getElementById('registerScoreBtn');
+    if (registerBtn) {
+      registerBtn.style.display = 'inline-block';
+    }
+  }
 
   // 合格証生成（既存の関数を使用）
   showCertificate();
@@ -1439,24 +1450,43 @@ function getBrowserId() {
  * エクストラステージのスコアをスプレッドシートに送信
  * @param {number} score - スコア（正解数）
  * @param {number} totalQuestions - 総問題数
+ * @param {HTMLElement} buttonElement - クリックされたボタン要素（オプション）
  */
-function sendScoreToServer(score, totalQuestions) {
+function sendScoreToServer(score, totalQuestions, buttonElement) {
   const browserId = getBrowserId();
   const genre = 'エクストラステージ';
 
   // スコアを100点満点に変換
   const scorePercent = Math.round((score / totalQuestions) * 100);
 
+  // ボタンを無効化して送信中表示
+  if (buttonElement) {
+    buttonElement.disabled = true;
+    buttonElement.textContent = '送信中...';
+  }
+
   google.script.run
     .withSuccessHandler(function(response) {
       if (response.success) {
         console.log('スコア送信成功: 順位 = ' + response.rank);
+        if (buttonElement) {
+          buttonElement.textContent = '✓ 登録完了（' + response.rank + '位）';
+          buttonElement.classList.add('btn-success');
+        }
       } else {
         console.error('スコア送信失敗:', response.error);
+        if (buttonElement) {
+          buttonElement.disabled = false;
+          buttonElement.textContent = '❌ 送信失敗 - 再試行';
+        }
       }
     })
     .withFailureHandler(function(error) {
       console.error('スコア送信エラー:', error);
+      if (buttonElement) {
+        buttonElement.disabled = false;
+        buttonElement.textContent = '❌ 送信失敗 - 再試行';
+      }
     })
     .saveScore({
       browserId: browserId,
@@ -1464,6 +1494,24 @@ function sendScoreToServer(score, totalQuestions) {
       score: scorePercent,
       genre: genre
     });
+}
+
+/**
+ * エクストラステージのスコア送信（合格画面用）
+ */
+function registerExtraScore(evt) {
+  const buttonElement = evt ? evt.target : null;
+  // 全問正解なので100点
+  sendScoreToServer(ultraQuestions.length, ultraQuestions.length, buttonElement);
+}
+
+/**
+ * エクストラステージのスコア送信（失敗画面用）
+ */
+function registerExtraScoreFailed(evt) {
+  const buttonElement = evt ? evt.target : null;
+  // ultraCurrentQuestionが失敗した問題なので、正解数 = ultraCurrentQuestion
+  sendScoreToServer(ultraCurrentQuestion, ultraQuestions.length, buttonElement);
 }
 
 /**

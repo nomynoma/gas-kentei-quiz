@@ -179,6 +179,30 @@ h1 {
   transform: translateY(-2px);
 }
 
+.btn-score-register {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+.btn-score-register:hover {
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+  box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-score-register:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+}
+
 /* スライダー風ナビゲーションボタン */
 .slider-nav-btn {
   position: absolute;
