@@ -90,5 +90,8 @@ const CERTIFICATE_BG_IMAGE_MAP = {
   '6-1': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-1.jpg',
   '6-2': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-2.jpg',
   '6-3': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg',
-  '6-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg'  // 超級（仮で上級の画像を使用）
+  '6-4': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg', // 超級（仮で上級の画像を使用）
+
+  // 全ジャンル（エクストラステージ）
+  'ALL': HOSTING_BASE_URL + '/imgs/frame_hyousyoujyou_6-3.jpg' // エクストラステージ（仮で別の画像を使用）
 };

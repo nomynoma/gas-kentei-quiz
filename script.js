@@ -725,17 +725,31 @@ function showWrongAnswers() {
 
 // 合格証明書を表示
 function showCertificate(){
-  // 超級モード（currentLevelIndex = 3）の場合は「超級」
-  const levelName = currentLevelIndex === 3 ? '超級' : levels[currentLevelIndex];
+  // エクストラモードの場合は「合格」、超級モード（currentLevelIndex = 3）の場合は「超級」
+  let levelName;
+  if (isExtraMode) {
+    levelName = '合格';
+  } else if (currentLevelIndex === 3) {
+    levelName = '超級';
+  } else {
+    levelName = levels[currentLevelIndex];
+  }
+
   const today = new Date();
   const dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
 
-  // ジャンル番号を取得（config.jsのGENRE_NAMESから）
-  const genreNumber = getGenreNumber(currentGenre);
-  const levelNumber = currentLevelIndex + 1; // 0:初級→1, 1:中級→2, 2:上級→3, 3:超級→4
+  // エクストラモードの場合は'ALL'キーを使用
+  let mapKey;
+  if (isExtraMode) {
+    mapKey = 'ALL';
+  } else {
+    // ジャンル番号を取得（config.jsのGENRE_NAMESから）
+    const genreNumber = getGenreNumber(currentGenre);
+    const levelNumber = currentLevelIndex + 1; // 0:初級→1, 1:中級→2, 2:上級→3, 3:超級→4
+    mapKey = genreNumber + '-' + levelNumber;
+  }
 
   // 背景画像URLをマッピングから取得
-  const mapKey = genreNumber + '-' + levelNumber;
   const imageUrl = CERTIFICATE_BG_IMAGE_MAP[mapKey];
 
   // マッピングに存在しない場合のフォールバック（念のため）
@@ -751,11 +765,11 @@ function showCertificate(){
     '<div class="certificate-date">' + dateStr + '</div>';
 
   // ローディング画面を表示して画像生成開始
-  showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml);
+  showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml, mapKey);
 }
 
 // 合格証作成中ローディング表示 → 画像生成 → 合格証画面表示
-function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml){
+function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtml, mapKey){
   // ローディング画面を表示（問題画面エリアを使用）
   document.getElementById('multipleInstruction').style.display = 'none';
   document.getElementById('questionText').innerHTML =
@@ -783,20 +797,20 @@ function showCertificateLoading(levelName, dateStr, imageUrl, certificateTextHtm
   const captureImg = document.getElementById('captureImage');
   captureImg.onload = function() {
     setTimeout(() => {
-      generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml);
+      generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml, mapKey);
     }, 100);
   };
 
   // 既に読み込み済みの場合（キャッシュ）
   if (captureImg.complete) {
     setTimeout(() => {
-      generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml);
+      generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml, mapKey);
     }, 100);
   }
 }
 
 // 合格証画像を生成してlocalStorageに保存後、合格証画面を表示
-function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml){
+function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTextHtml, mapKey){
   const captureArea = document.getElementById('captureArea');
 
   html2canvas(captureArea, {
@@ -811,7 +825,7 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
     const imageDataBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
     // localStorageに保存
-    const storageKey = currentGenre + '_' + levelName;
+    const storageKey = mapKey;
     try {
       localStorage.setItem(storageKey, imageDataBase64);
       console.log('合格証画像をlocalStorageに保存しました。Key: ' + storageKey);
@@ -876,8 +890,8 @@ function openCertificateInNewWindow(){
 function isDifficultyUnlocked(genreName, levelIndex) {
   if (levelIndex === 0) return true; // 初級は常に解放
 
-  const previousLevel = levels[levelIndex - 1];
-  const storageKey = genreName + '_' + previousLevel;
+  const genreNumber = getGenreNumber(genreName);
+  const storageKey = genreNumber + '-' + levelIndex;
   return localStorage.getItem(storageKey) !== null;
 }
 
@@ -928,7 +942,8 @@ function initializeGenreButtons() {
       difficultyWrapper.appendChild(difficultyBtn);
 
       // 合格証バッジ（メダル）
-      const storageKey = genreName + '_' + levelName;
+      const genreNumber = getGenreNumber(genreName);
+      const storageKey = genreNumber + '-' + (levelIndex + 1);
       const certificateData = localStorage.getItem(storageKey);
 
       if (certificateData) {
@@ -959,7 +974,8 @@ function initializeGenreButtons() {
     ultraBtn.textContent = '超級';
 
     // 超級の解放判定：上級クリア済みかどうか
-    const ultraStorageKey = genreName + '_上級';
+    const genreNumber = getGenreNumber(genreName);
+    const ultraStorageKey = genreNumber + '-3';
     const isUltraUnlocked = localStorage.getItem(ultraStorageKey) !== null;
 
     if (isUltraUnlocked) {
@@ -974,7 +990,7 @@ function initializeGenreButtons() {
     ultraWrapper.appendChild(ultraBtn);
 
     // 超級の合格証バッジ
-    const ultraCertKey = genreName + '_超級';
+    const ultraCertKey = genreNumber + '-4';
     const ultraCertData = localStorage.getItem(ultraCertKey);
 
     if (ultraCertData) {
@@ -999,7 +1015,8 @@ function initializeGenreButtons() {
 
   // エクストラステージボタンを追加（全ジャンルの上級クリア後のみ表示）
   const allGenresUltraCleared = GENRE_NAMES.every(genreName => {
-    const storageKey = genreName + '_上級';
+    const genreNumber = getGenreNumber(genreName);
+    const storageKey = genreNumber + '-3';
     return localStorage.getItem(storageKey) !== null;
   });
 
@@ -1017,7 +1034,7 @@ function initializeGenreButtons() {
     extraContainer.appendChild(extraBtn);
 
     // エクストラステージの合格証バッジ
-    const extraCertKey = 'エクストラステージ_合格';
+    const extraCertKey = 'ALL';
     const extraCertData = localStorage.getItem(extraCertKey);
 
     if (extraCertData) {
