@@ -693,6 +693,15 @@ function showWrongAnswers() {
       wrongAnswersHtml += '<div class="wrong-answer-hint">ヒント：';
       if (item.hintUrl) {
         wrongAnswersHtml += '<a href="' + item.hintUrl + '" target="_blank" rel="noopener noreferrer">' + (item.hintText || 'こちら') + '</a>';
+
+        // YouTube動画の場合はサムネイルを表示
+        const youtubeId = extractYouTubeId(item.hintUrl);
+        if (youtubeId) {
+          const thumbnailUrl = getYouTubeThumbnail(youtubeId);
+          wrongAnswersHtml += '<div class="hint-thumbnail">';
+          wrongAnswersHtml += '<img src="' + thumbnailUrl + '" alt="YouTube動画サムネイル" onerror="this.parentElement.style.display=\'none\'">';
+          wrongAnswersHtml += '</div>';
+        }
       } else {
         wrongAnswersHtml += item.hintText;
       }
@@ -1386,6 +1395,39 @@ function showUltraCertificate() {
 
   // 合格証生成（既存の関数を使用）
   showCertificate();
+}
+
+/**
+ * YouTube URLから動画IDを抽出
+ * @param {string} url - YouTube URL
+ * @returns {string|null} 動画ID、または抽出できない場合はnull
+ */
+function extractYouTubeId(url) {
+  if (!url) return null;
+
+  // youtube.com/watch?v=VIDEO_ID 形式
+  const watchMatch = url.match(/[?&]v=([^&#]+)/);
+  if (watchMatch) return watchMatch[1];
+
+  // youtu.be/VIDEO_ID 形式
+  const shortMatch = url.match(/youtu\.be\/([^?&#]+)/);
+  if (shortMatch) return shortMatch[1];
+
+  // youtube.com/embed/VIDEO_ID 形式
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&#]+)/);
+  if (embedMatch) return embedMatch[1];
+
+  return null;
+}
+
+/**
+ * YouTube動画IDからサムネイルURLを生成
+ * @param {string} videoId - YouTube動画ID
+ * @returns {string} サムネイルURL
+ */
+function getYouTubeThumbnail(videoId) {
+  // maxresdefaultを最初に試み、存在しない場合はhqdefaultにフォールバック
+  return 'https://img.youtube.com/vi/' + videoId + '/maxresdefault.jpg';
 }
 
 /**

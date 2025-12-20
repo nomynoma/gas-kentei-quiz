@@ -1104,6 +1104,22 @@ h1 {
   color: #0d47a1;
 }
 
+.hint-thumbnail {
+  margin-top: 10px;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.hint-thumbnail img {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 600px) {
   .genre-container {
