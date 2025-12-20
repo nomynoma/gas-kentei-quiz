@@ -1275,8 +1275,17 @@ function showUltraQuestion() {
   // 選択肢を表示（GAS側でシャッフル済み）
   choicesDiv.innerHTML = '';
   const isImage = q.displayType === 'image';
-  const isMultiple = q.answerType === 'multiple';
+  const isMultiple = q.selectionType === 'multiple';
   const isInput = q.selectionType === 'input';
+
+  // デバッグ用ログ
+  console.log('超級問題:', {
+    id: q.id,
+    selectionType: q.selectionType,
+    displayType: q.displayType,
+    isMultiple: isMultiple,
+    isInput: isInput
+  });
 
   // 入力式問題の場合
   if (isInput) {
@@ -1462,11 +1471,8 @@ async function submitUltraAnswer(answers) {
 
   const q = ultraQuestions[ultraCurrentQuestion];
 
-  // 配列をソートして結合
-  const answerString = answers.slice().sort().join(',');
-
-  // ハッシュ値で判定
-  const userHash = await hashAnswer(answerString);
+  // ハッシュ値で判定（answersを配列のまま渡す）
+  const userHash = await hashAnswer(answers);
   const isCorrect = userHash === q.correctHash;
 
   if (isCorrect) {
