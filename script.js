@@ -1203,14 +1203,6 @@ function startUltraMode(genre) {
           return;
         }
 
-        // デバッグ: 最初の数問のselectionTypeを確認
-        console.log('エクストラモード問題取得:', ultraQuestions.length + '問');
-        console.log('最初の5問のselectionType:', ultraQuestions.slice(0, 5).map(q => ({
-          id: q.id,
-          selectionType: q.selectionType,
-          displayType: q.displayType
-        })));
-
         // 最初の問題を表示
         showUltraQuestion();
       })
@@ -1231,14 +1223,6 @@ function startUltraMode(genre) {
           backToGenreSelection();
           return;
         }
-
-        // デバッグ: 最初の数問のselectionTypeを確認
-        console.log('超級モード問題取得:', ultraQuestions.length + '問');
-        console.log('最初の5問のselectionType:', ultraQuestions.slice(0, 5).map(q => ({
-          id: q.id,
-          selectionType: q.selectionType,
-          displayType: q.displayType
-        })));
 
         // 最初の問題を表示
         showUltraQuestion();
@@ -1293,15 +1277,6 @@ function showUltraQuestion() {
   const isImage = q.displayType === 'image';
   const isMultiple = q.selectionType === 'multiple';
   const isInput = q.selectionType === 'input';
-
-  // デバッグ用ログ
-  console.log('超級問題:', {
-    id: q.id,
-    selectionType: q.selectionType,
-    displayType: q.displayType,
-    isMultiple: isMultiple,
-    isInput: isInput
-  });
 
   // 入力式問題の場合
   if (isInput) {
