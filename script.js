@@ -1275,6 +1275,7 @@ function showUltraQuestion() {
   // 選択肢を表示（GAS側でシャッフル済み）
   choicesDiv.innerHTML = '';
   const isImage = q.displayType === 'image';
+  const isMultiple = q.answerType === 'multiple';
 
   // 選択肢マップを作成（通常問題と同じ）
   const choiceMap = { A: q.choiceA || '', B: q.choiceB || '', C: q.choiceC || '', D: q.choiceD || '' };
@@ -1299,14 +1300,33 @@ function showUltraQuestion() {
       button.innerHTML = `<strong>${label}:</strong> ${sanitizedHtml}`;
     }
 
-    button.onclick = function() {
-      handleUltraAnswer(value);
-    };
+    if (isMultiple) {
+      // 複数選択：クリックで選択状態をトグル
+      button.onclick = function() {
+        toggleUltraChoice(button);
+      };
+    } else {
+      // 単一選択：クリックで即座に回答
+      button.onclick = function() {
+        submitUltraAnswer([value]);
+      };
+    }
 
     gridDiv.appendChild(button);
   });
 
   choicesDiv.appendChild(gridDiv);
+
+  // 複数選択の場合は回答ボタンを追加
+  if (isMultiple) {
+    const submitBtn = document.createElement('button');
+    submitBtn.className = 'btn btn-primary ultra-submit-btn';
+    submitBtn.textContent = '回答する';
+    submitBtn.onclick = function() {
+      submitUltraMultipleAnswer();
+    };
+    choicesDiv.appendChild(submitBtn);
+  }
 
   // タイマーをリセットして開始
   startUltraTimer();
@@ -1354,21 +1374,51 @@ function updateUltraTimerDisplay() {
 }
 
 /**
- * 超級モードの回答処理
- * @param {string} answer - ユーザーの回答
+ * 超級モードの選択肢トグル（複数選択用）
+ * @param {HTMLElement} button - クリックされたボタン
  */
-async function handleUltraAnswer(answer) {
+function toggleUltraChoice(button) {
+  button.classList.toggle('selected');
+}
+
+/**
+ * 超級モードの複数選択回答を送信
+ */
+function submitUltraMultipleAnswer() {
+  const selectedButtons = document.querySelectorAll('#ultraChoices .choice-btn.selected');
+  const selectedValues = Array.from(selectedButtons).map(btn => btn.dataset.value);
+
+  if (selectedValues.length === 0) {
+    alert('選択肢を選んでください');
+    return;
+  }
+
+  submitUltraAnswer(selectedValues);
+}
+
+/**
+ * 超級モードの回答処理
+ * @param {Array} answers - ユーザーの回答（配列）
+ */
+async function submitUltraAnswer(answers) {
   // タイマーを停止
   clearInterval(ultraTimer);
 
   // 選択肢ボタンを無効化
-  const choiceButtons = document.querySelectorAll('#ultraChoices .choice');
+  const choiceButtons = document.querySelectorAll('#ultraChoices .choice-btn');
   choiceButtons.forEach(btn => btn.disabled = true);
+
+  // 回答ボタンも無効化
+  const submitBtn = document.querySelector('#ultraChoices .ultra-submit-btn');
+  if (submitBtn) submitBtn.disabled = true;
 
   const q = ultraQuestions[ultraCurrentQuestion];
 
+  // 配列をソートして結合
+  const answerString = answers.slice().sort().join(',');
+
   // ハッシュ値で判定
-  const userHash = await hashAnswer(answer);
+  const userHash = await hashAnswer(answerString);
   const isCorrect = userHash === q.correctHash;
 
   if (isCorrect) {

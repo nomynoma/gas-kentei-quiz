@@ -931,6 +931,24 @@ h1 {
   font-weight: bold;
 }
 
+/* 超級モード: 回答ボタン */
+.ultra-submit-btn {
+  margin-top: 20px;
+  width: 100%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 超級モード: 選択状態のスタイル */
+#ultraChoices .choice-btn.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 3px solid #667eea;
+  transform: scale(1.05);
+}
+
 /* 超級モード: 失敗画面 */
 .ultra-fail-message {
   font-size: 24px;
