@@ -1485,9 +1485,15 @@ function sendScoreToServer(score, totalQuestions, buttonElement) {
   google.script.run
     .withSuccessHandler(function(response) {
       if (response.success) {
-        console.log('スコア送信成功: 順位 = ' + response.rank);
         if (buttonElement) {
-          buttonElement.textContent = '✓ 登録完了（' + response.rank + '位）';
+          // 殿堂入りか順位かで表示を分ける
+          if (response.isHallOfFame) {
+            console.log('スコア送信成功: 殿堂入り（全問正解）');
+            buttonElement.textContent = '✓ 登録完了（殿堂入り）';
+          } else {
+            console.log('スコア送信成功: 順位 = ' + response.rank);
+            buttonElement.textContent = '✓ 登録完了（' + response.rank + '位）';
+          }
           buttonElement.classList.add('btn-success');
         }
       } else {
@@ -1539,7 +1545,7 @@ function showRanking() {
 
   google.script.run
     .withSuccessHandler(function(response) {
-      displayRanking(response.rankings);
+      displayRanking(response.hallOfFame, response.rankings);
     })
     .withFailureHandler(function(error) {
       console.error('ランキング取得エラー:', error);
@@ -1556,32 +1562,62 @@ function showRanking() {
 }
 
 /**
- * ランキングを画面に表示
- * @param {Array} rankings - ランキングデータ
+ * ランキングを画面に表示（殿堂入りと挑戦者を分離）
+ * @param {Array} hallOfFame - 殿堂入りデータ（全問正解者）
+ * @param {Array} rankings - 挑戦者ランキングデータ
  */
-function displayRanking(rankings) {
+function displayRanking(hallOfFame, rankings) {
   const rankingList = document.getElementById('rankingList');
 
-  if (!rankings || rankings.length === 0) {
+  if ((!hallOfFame || hallOfFame.length === 0) && (!rankings || rankings.length === 0)) {
     rankingList.innerHTML = '<div class="description-text">まだランキングデータがありません</div>';
     return;
   }
 
-  let html = '<div class="ranking-table">';
+  let html = '';
 
-  rankings.forEach(function(item) {
-    const rankClass = item.rank === 1 ? 'rank-1' : item.rank === 2 ? 'rank-2' : item.rank === 3 ? 'rank-3' : '';
-    const currentUserClass = item.isCurrentUser ? 'current-user' : '';
-    const medal = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '';
+  // 殿堂入りセクション（全問正解者）
+  if (hallOfFame && hallOfFame.length > 0) {
+    html += '<div class="ranking-section hall-of-fame-section">';
+    html += '<h2 class="ranking-section-title">👑 全問正解者</h2>';
+    html += '<div class="ranking-table">';
 
-    html += '<div class="ranking-item ' + rankClass + ' ' + currentUserClass + '">';
-    html += '<div class="ranking-rank">' + medal + item.rank + '</div>';
-    html += '<div class="ranking-nickname">' + item.nickname + '</div>';
-    html += '<div class="ranking-score">' + item.score + '点</div>';
+    hallOfFame.forEach(function(item) {
+      const currentUserClass = item.isCurrentUser ? 'current-user' : '';
+      html += '<div class="ranking-item hall-of-fame-item ' + currentUserClass + '">';
+      html += '<div class="ranking-rank">👑</div>';
+      html += '<div class="ranking-nickname">' + item.nickname + '</div>';
+      html += '<div class="ranking-score">' + item.score + '点</div>';
+      html += '<div class="ranking-timestamp">' + item.timestamp + '</div>';
+      html += '</div>';
+    });
+
     html += '</div>';
-  });
+    html += '</div>';
+  }
 
-  html += '</div>';
+  // 挑戦者ランキングセクション
+  if (rankings && rankings.length > 0) {
+    html += '<div class="ranking-section challenger-section">';
+    html += '<h2 class="ranking-section-title">🔥 挑戦者スコアTOP10</h2>';
+    html += '<div class="ranking-table">';
+
+    rankings.forEach(function(item) {
+      const rankClass = item.rank === 1 ? 'rank-1' : item.rank === 2 ? 'rank-2' : item.rank === 3 ? 'rank-3' : '';
+      const currentUserClass = item.isCurrentUser ? 'current-user' : '';
+      const medal = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '';
+
+      html += '<div class="ranking-item ' + rankClass + ' ' + currentUserClass + '">';
+      html += '<div class="ranking-rank">' + medal + item.rank + '</div>';
+      html += '<div class="ranking-nickname">' + item.nickname + '</div>';
+      html += '<div class="ranking-score">' + item.score + '点</div>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+    html += '</div>';
+  }
+
   rankingList.innerHTML = html;
 }
 

@@ -954,18 +954,27 @@ function saveScore(payload) {
     }
 
     // ランキングを取得して順位を返す
-    var rankingData = getTopScores({ genre: genre, limit: 100 });
+    var rankingData = getTopScores({ genre: genre, limit: 100, browserId: browserId });
     var rank = -1;
-    for (var i = 0; i < rankingData.rankings.length; i++) {
-      if (rankingData.rankings[i].browserId === browserId) {
-        rank = i + 1;
-        break;
+    var isHallOfFame = false;
+
+    // 100点の場合は殿堂入り
+    if (score === 100) {
+      isHallOfFame = true;
+    } else {
+      // 100点未満の場合は挑戦者ランキングから順位を取得
+      for (var i = 0; i < rankingData.rankings.length; i++) {
+        if (rankingData.rankings[i].browserId === browserId) {
+          rank = i + 1;
+          break;
+        }
       }
     }
 
     return {
       success: true,
       rank: rank,
+      isHallOfFame: isHallOfFame,
       message: 'スコアを保存しました'
     };
 
@@ -979,11 +988,11 @@ function saveScore(payload) {
 }
 
 /**
- * TOP N のスコアランキングを取得
+ * TOP N のスコアランキングを取得（殿堂入りと挑戦者を分離）
  * @param {Object} payload
  * @param {string} payload.genre - ジャンル名（省略時は"エクストラステージ"）
  * @param {number} payload.limit - 取得件数（デフォルト10）
- * @returns {Object} { rankings: [{rank, nickname, score, timestamp, isCurrentUser}, ...] }
+ * @returns {Object} { hallOfFame: [...], rankings: [...] }
  */
 function getTopScores(payload) {
   try {
@@ -996,27 +1005,41 @@ function getTopScores(payload) {
 
     if (!sheet) {
       return {
+        hallOfFame: [],
         rankings: []
       };
     }
 
     var data = sheet.getDataRange().getValues();
-    var scores = [];
+    var perfectScores = [];  // 100点（全問正解者）
+    var challengerScores = [];  // 100点未満（挑戦者）
 
     // ヘッダー行をスキップして、指定ジャンルのデータを抽出
     for (var i = 1; i < data.length; i++) {
       if (data[i][4] === genre) {
-        scores.push({
+        var scoreData = {
           browserId: data[i][0],
           nickname: data[i][1],
           score: data[i][2],
           timestamp: data[i][3]
-        });
+        };
+
+        // 100点かどうかで振り分け
+        if (scoreData.score === 100) {
+          perfectScores.push(scoreData);
+        } else {
+          challengerScores.push(scoreData);
+        }
       }
     }
 
-    // スコア降順でソート
-    scores.sort(function(a, b) {
+    // 全問正解者：古い順でソート（早く達成した人が上位）
+    perfectScores.sort(function(a, b) {
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+
+    // 挑戦者：スコア降順でソート
+    challengerScores.sort(function(a, b) {
       if (b.score !== a.score) {
         return b.score - a.score;
       }
@@ -1024,11 +1047,22 @@ function getTopScores(payload) {
       return new Date(a.timestamp) - new Date(b.timestamp);
     });
 
-    // 上位N件を取得
-    var topScores = scores.slice(0, limit);
+    // 挑戦者のTOP N件を取得
+    var topChallengers = challengerScores.slice(0, limit);
 
-    // ランキング形式に整形
-    var rankings = topScores.map(function(item, index) {
+    // 殿堂入り（全問正解者）を整形
+    var hallOfFame = perfectScores.map(function(item) {
+      return {
+        nickname: item.nickname,
+        score: item.score,
+        timestamp: Utilities.formatDate(new Date(item.timestamp), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm'),
+        browserId: item.browserId,
+        isCurrentUser: browserId && item.browserId === browserId
+      };
+    });
+
+    // ランキング（挑戦者）を整形
+    var rankings = topChallengers.map(function(item, index) {
       return {
         rank: index + 1,
         nickname: item.nickname,
@@ -1040,12 +1074,14 @@ function getTopScores(payload) {
     });
 
     return {
+      hallOfFame: hallOfFame,
       rankings: rankings
     };
 
   } catch (error) {
     Logger.log('getTopScores エラー: ' + error);
     return {
+      hallOfFame: [],
       rankings: [],
       error: error.toString()
     };
