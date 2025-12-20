@@ -885,3 +885,169 @@ function generateAnswerHash(answer) {
 
   return hashString;
 }
+
+// ========================================
+// スコアランキング機能
+// ========================================
+
+/**
+ * エクストラステージのスコアをスプレッドシートに保存
+ * 同じbrowserIdがあれば更新、なければ新規追加
+ * @param {Object} payload
+ * @param {string} payload.browserId - ブラウザ識別ID
+ * @param {string} payload.nickname - ニックネーム
+ * @param {number} payload.score - スコア
+ * @param {string} payload.genre - ジャンル名（"エクストラステージ"など）
+ * @returns {Object} { success: true, rank: number } または { success: false, error: string }
+ */
+function saveScore(payload) {
+  try {
+    var browserId = payload.browserId;
+    var nickname = payload.nickname;
+    var score = payload.score;
+    var genre = payload.genre || 'エクストラステージ';
+
+    if (!browserId || !nickname || score === undefined) {
+      return {
+        success: false,
+        error: '必須パラメータが不足しています'
+      };
+    }
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = 'スコアランキング';
+    var sheet = ss.getSheetByName(sheetName);
+
+    // シートが存在しない場合は作成
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      // ヘッダー行を追加
+      sheet.appendRow(['browserId', 'nickname', 'score', 'timestamp', 'genre']);
+      sheet.getRange('A1:E1').setFontWeight('bold');
+      sheet.setFrozenRows(1);
+    }
+
+    var data = sheet.getDataRange().getValues();
+    var rowIndex = -1;
+
+    // 同じbrowserIdがあるか検索
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === browserId && data[i][4] === genre) {
+        rowIndex = i + 1; // スプレッドシートの行番号（1-indexed）
+        break;
+      }
+    }
+
+    var timestamp = new Date();
+
+    if (rowIndex > 0) {
+      // 既存のレコードを更新（スコアがより高い場合のみ）
+      var existingScore = data[rowIndex - 1][2];
+      if (score > existingScore) {
+        sheet.getRange(rowIndex, 2).setValue(nickname);
+        sheet.getRange(rowIndex, 3).setValue(score);
+        sheet.getRange(rowIndex, 4).setValue(timestamp);
+      }
+    } else {
+      // 新規レコードを追加
+      sheet.appendRow([browserId, nickname, score, timestamp, genre]);
+    }
+
+    // ランキングを取得して順位を返す
+    var rankingData = getTopScores({ genre: genre, limit: 100 });
+    var rank = -1;
+    for (var i = 0; i < rankingData.rankings.length; i++) {
+      if (rankingData.rankings[i].browserId === browserId) {
+        rank = i + 1;
+        break;
+      }
+    }
+
+    return {
+      success: true,
+      rank: rank,
+      message: 'スコアを保存しました'
+    };
+
+  } catch (error) {
+    Logger.log('saveScore エラー: ' + error);
+    return {
+      success: false,
+      error: error.toString()
+    };
+  }
+}
+
+/**
+ * TOP N のスコアランキングを取得
+ * @param {Object} payload
+ * @param {string} payload.genre - ジャンル名（省略時は"エクストラステージ"）
+ * @param {number} payload.limit - 取得件数（デフォルト10）
+ * @returns {Object} { rankings: [{rank, nickname, score, timestamp, isCurrentUser}, ...] }
+ */
+function getTopScores(payload) {
+  try {
+    var genre = (payload && payload.genre) || 'エクストラステージ';
+    var limit = (payload && payload.limit) || 10;
+    var browserId = (payload && payload.browserId) || null;
+
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('スコアランキング');
+
+    if (!sheet) {
+      return {
+        rankings: []
+      };
+    }
+
+    var data = sheet.getDataRange().getValues();
+    var scores = [];
+
+    // ヘッダー行をスキップして、指定ジャンルのデータを抽出
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][4] === genre) {
+        scores.push({
+          browserId: data[i][0],
+          nickname: data[i][1],
+          score: data[i][2],
+          timestamp: data[i][3]
+        });
+      }
+    }
+
+    // スコア降順でソート
+    scores.sort(function(a, b) {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // スコアが同じ場合は古い方を上位にする
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+
+    // 上位N件を取得
+    var topScores = scores.slice(0, limit);
+
+    // ランキング形式に整形
+    var rankings = topScores.map(function(item, index) {
+      return {
+        rank: index + 1,
+        nickname: item.nickname,
+        score: item.score,
+        timestamp: Utilities.formatDate(new Date(item.timestamp), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm'),
+        browserId: item.browserId,
+        isCurrentUser: browserId && item.browserId === browserId
+      };
+    });
+
+    return {
+      rankings: rankings
+    };
+
+  } catch (error) {
+    Logger.log('getTopScores エラー: ' + error);
+    return {
+      rankings: [],
+      error: error.toString()
+    };
+  }
+}

@@ -22,6 +22,7 @@ let isEditingNickname = false; // ニックネーム編集モードかどうか
 // ローカルストレージのキー
 const STORAGE_KEY_NICKNAME = 'quiz_nickname';
 const STORAGE_KEY_CERTIFICATES = 'quiz_certificates';
+const STORAGE_KEY_BROWSER_ID = 'quiz_browser_id';
 
 // ========================================
 // 超級モード専用の変数
@@ -652,6 +653,11 @@ function showGradingLoading() {
 // レベル結果
 function showSectionResult(){
   if(score === questions.length){
+    // エクストラモードの場合、スコアをサーバーに送信
+    if (isExtraMode) {
+      sendScoreToServer(score, questions.length);
+    }
+
     // 合格：合格証明書を表示
     showCertificate();
   } else {
@@ -1034,6 +1040,15 @@ function initializeGenreButtons() {
     }
 
     genreButtonsDiv.appendChild(extraContainer);
+
+    // ランキング表示ボタンを追加
+    const rankingBtn = document.createElement('button');
+    rankingBtn.className = 'btn btn-ranking';
+    rankingBtn.textContent = '🏆 ランキングを見る';
+    rankingBtn.onclick = function() {
+      showRanking();
+    };
+    genreButtonsDiv.appendChild(rankingBtn);
   }
 }
 
@@ -1397,6 +1412,112 @@ function showUltraCertificate() {
 
   // 合格証生成（既存の関数を使用）
   showCertificate();
+}
+
+/**
+ * ブラウザ識別用のユニークIDを取得または生成
+ * @returns {string} ブラウザID (UUID v4形式)
+ */
+function getBrowserId() {
+  let browserId = localStorage.getItem(STORAGE_KEY_BROWSER_ID);
+
+  if (!browserId) {
+    // UUID v4を生成
+    browserId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+
+    localStorage.setItem(STORAGE_KEY_BROWSER_ID, browserId);
+  }
+
+  return browserId;
+}
+
+/**
+ * エクストラステージのスコアをスプレッドシートに送信
+ * @param {number} score - スコア（正解数）
+ * @param {number} totalQuestions - 総問題数
+ */
+function sendScoreToServer(score, totalQuestions) {
+  const browserId = getBrowserId();
+  const genre = 'エクストラステージ';
+
+  // スコアを100点満点に変換
+  const scorePercent = Math.round((score / totalQuestions) * 100);
+
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (response.success) {
+        console.log('スコア送信成功: 順位 = ' + response.rank);
+      } else {
+        console.error('スコア送信失敗:', response.error);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('スコア送信エラー:', error);
+    })
+    .saveScore({
+      browserId: browserId,
+      nickname: nickname,
+      score: scorePercent,
+      genre: genre
+    });
+}
+
+/**
+ * ランキング画面を表示
+ */
+function showRanking() {
+  const browserId = getBrowserId();
+
+  google.script.run
+    .withSuccessHandler(function(response) {
+      displayRanking(response.rankings);
+    })
+    .withFailureHandler(function(error) {
+      console.error('ランキング取得エラー:', error);
+      document.getElementById('rankingList').innerHTML =
+        '<div class="error-text">ランキングの取得に失敗しました</div>';
+    })
+    .getTopScores({
+      genre: 'エクストラステージ',
+      limit: 10,
+      browserId: browserId
+    });
+
+  showScreen('rankingScreen');
+}
+
+/**
+ * ランキングを画面に表示
+ * @param {Array} rankings - ランキングデータ
+ */
+function displayRanking(rankings) {
+  const rankingList = document.getElementById('rankingList');
+
+  if (!rankings || rankings.length === 0) {
+    rankingList.innerHTML = '<div class="description-text">まだランキングデータがありません</div>';
+    return;
+  }
+
+  let html = '<div class="ranking-table">';
+
+  rankings.forEach(function(item) {
+    const rankClass = item.rank === 1 ? 'rank-1' : item.rank === 2 ? 'rank-2' : item.rank === 3 ? 'rank-3' : '';
+    const currentUserClass = item.isCurrentUser ? 'current-user' : '';
+    const medal = item.rank === 1 ? '🥇' : item.rank === 2 ? '🥈' : item.rank === 3 ? '🥉' : '';
+
+    html += '<div class="ranking-item ' + rankClass + ' ' + currentUserClass + '">';
+    html += '<div class="ranking-rank">' + medal + item.rank + '</div>';
+    html += '<div class="ranking-nickname">' + item.nickname + '</div>';
+    html += '<div class="ranking-score">' + item.score + '点</div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  rankingList.innerHTML = html;
 }
 
 /**

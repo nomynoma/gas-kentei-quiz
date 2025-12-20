@@ -165,6 +165,20 @@ h1 {
   background: #218838;
 }
 
+.btn-ranking {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ranking:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  transform: translateY(-2px);
+}
+
 /* スライダー風ナビゲーションボタン */
 .slider-nav-btn {
   position: absolute;
@@ -1309,5 +1323,143 @@ h1 {
   .certificate-modal-buttons .btn {
     width: 100%;
     margin: 0;
+  }
+}
+
+/* ========================================
+   ランキング画面
+   ======================================== */
+
+.ranking-list {
+  margin: 20px 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ranking-table {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.ranking-item:last-child {
+  border-bottom: none;
+}
+
+.ranking-item:hover {
+  background-color: #f5f5f5;
+}
+
+.ranking-rank {
+  font-size: 18px;
+  font-weight: bold;
+  color: #666;
+  min-width: 60px;
+  text-align: center;
+}
+
+.ranking-nickname {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  padding: 0 15px;
+}
+
+.ranking-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1976d2;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* 1位・2位・3位のスタイル */
+.ranking-item.rank-1 {
+  background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.ranking-item.rank-1 .ranking-rank {
+  color: #ffa500;
+  font-size: 24px;
+}
+
+.ranking-item.rank-2 {
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+}
+
+.ranking-item.rank-2 .ranking-rank {
+  color: #c0c0c0;
+  font-size: 22px;
+}
+
+.ranking-item.rank-3 {
+  background: linear-gradient(135deg, #fff5e6 0%, #ffffff 100%);
+}
+
+.ranking-item.rank-3 .ranking-rank {
+  color: #cd7f32;
+  font-size: 20px;
+}
+
+/* 自分のスコアをハイライト */
+.ranking-item.current-user {
+  background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+  border-left: 4px solid #1976d2;
+}
+
+.ranking-item.current-user .ranking-nickname {
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.ranking-item.current-user .ranking-nickname::after {
+  content: ' (あなた)';
+  font-size: 12px;
+  color: #1976d2;
+  font-weight: normal;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .ranking-item {
+    padding: 12px 15px;
+  }
+
+  .ranking-rank {
+    min-width: 50px;
+    font-size: 16px;
+  }
+
+  .ranking-item.rank-1 .ranking-rank {
+    font-size: 20px;
+  }
+
+  .ranking-item.rank-2 .ranking-rank {
+    font-size: 18px;
+  }
+
+  .ranking-item.rank-3 .ranking-rank {
+    font-size: 17px;
+  }
+
+  .ranking-nickname {
+    font-size: 14px;
+    padding: 0 10px;
+  }
+
+  .ranking-score {
+    font-size: 16px;
+    min-width: 70px;
   }
 }
