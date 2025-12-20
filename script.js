@@ -698,9 +698,11 @@ function showWrongAnswers() {
         const youtubeId = extractYouTubeId(item.hintUrl);
         if (youtubeId) {
           const thumbnailUrl = getYouTubeThumbnail(youtubeId);
+          wrongAnswersHtml += '<a href="' + item.hintUrl + '" target="_blank" rel="noopener noreferrer" class="hint-thumbnail-link">';
           wrongAnswersHtml += '<div class="hint-thumbnail">';
-          wrongAnswersHtml += '<img src="' + thumbnailUrl + '" alt="YouTube動画サムネイル" onerror="this.parentElement.style.display=\'none\'">';
+          wrongAnswersHtml += '<img src="' + thumbnailUrl + '" alt="YouTube動画サムネイル" onerror="this.parentElement.parentElement.style.display=\'none\'">';
           wrongAnswersHtml += '</div>';
+          wrongAnswersHtml += '</a>';
         }
       } else {
         wrongAnswersHtml += item.hintText;
