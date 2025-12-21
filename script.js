@@ -248,7 +248,6 @@ function saveCertificateMetadata(mapKey, nickname, date) {
       return String.fromCharCode(parseInt(p1, 16));
     }));
     localStorage.setItem(mapKey, encoded);
-    console.log('合格証メタデータを保存しました。Key: ' + mapKey);
   } catch (error) {
     console.error('メタデータ保存エラー:', error);
   }
@@ -1603,10 +1602,8 @@ function sendScoreToServer(score, totalQuestions, buttonElement) {
         if (buttonElement) {
           // 殿堂入りか順位かで表示を分ける
           if (response.isHallOfFame) {
-            console.log('スコア送信成功: 殿堂入り（全問正解）');
             buttonElement.textContent = '✓ 登録完了（殿堂入り）';
           } else {
-            console.log('スコア送信成功: 順位 = ' + response.rank);
             buttonElement.textContent = '✓ 登録完了（' + response.rank + '位）';
           }
           buttonElement.classList.add('btn-success');
