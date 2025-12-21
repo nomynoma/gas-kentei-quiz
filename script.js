@@ -991,7 +991,7 @@ function initializeGenreButtons() {
     // 超級の解放判定：上級クリア済みかどうか
     const genreNumber = getGenreNumber(genreName);
     const ultraStorageKey = genreNumber + '-3';
-    const isUltraUnlocked = localStorage.getItem(ultraStorageKey) !== null;
+    const isUltraUnlocked = getCertificateMetadata(ultraStorageKey) !== null;
 
     if (isUltraUnlocked) {
       ultraBtn.onclick = function() {
