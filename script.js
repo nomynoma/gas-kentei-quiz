@@ -1783,3 +1783,37 @@ function closeCertificateModal() {
   const modal = document.getElementById('certificateModal');
   modal.style.display = 'none';
 }
+
+/**
+ * ローカルストレージを完全にリセットする関数
+ */
+function resetLocalStorage() {
+  if (!confirm('すべてのローカルデータ（ニックネーム・合格証・スコアなど）が削除されます。\n\nよろしいですか？')) {
+    return;
+  }
+  
+  try {
+    // クイズアプリ関連のすべてのキーを削除
+    const keysToRemove = [];
+    
+    // すべてのキーを取得
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      keysToRemove.push(key);
+    }
+    
+    // 一括削除
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    alert('ローカルデータをリセットしました。\n\nページを再読み込みします。');
+    
+    // ページをリロード
+    location.reload();
+    
+  } catch (error) {
+    console.error('リセットエラー:', error);
+    alert('リセットに失敗しました: ' + error.message);
+  }
+}
