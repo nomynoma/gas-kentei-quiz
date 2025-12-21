@@ -242,7 +242,11 @@ function saveCertificateMetadata(mapKey, nickname, date) {
       date: date,
       timestamp: new Date().getTime()
     };
-    const encoded = btoa(JSON.stringify(metadata)); // Base64エンコード
+    // 日本語対応：UTF-8 → Base64（モダンな方法）
+    const jsonStr = JSON.stringify(metadata);
+    const encoded = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+      return String.fromCharCode(parseInt(p1, 16));
+    }));
     localStorage.setItem(mapKey, encoded);
     console.log('合格証メタデータを保存しました。Key: ' + mapKey);
   } catch (error) {
@@ -257,14 +261,17 @@ function getCertificateMetadata(mapKey) {
     if (!data) return null;
     
     try {
-      // Base64デコードを試みる
-      const decoded = atob(data);
+      // Base64デコード（日本語対応・モダンな方法）
+      const decoded = decodeURIComponent(Array.prototype.map.call(atob(data), (c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
       const parsed = JSON.parse(decoded);
       if (parsed.nickname && parsed.date) {
         return parsed;
       }
     } catch (e) {
       // デコード失敗 = 古い形式または不正なデータ
+      console.log('デコード失敗（古い形式の可能性）:', e);
     }
     
     return null;
