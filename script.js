@@ -1808,10 +1808,10 @@ function resetLocalStorage() {
     });
     
     alert('ローカルデータをリセットしました。\n\nページを再読み込みします。');
-    
-    // ページをリロード
-    location.reload();
-    
+
+    // トップページ（GitHub Pages）に移動
+    window.top.location.href = HOSTING_BASE_URL;
+
   } catch (error) {
     console.error('リセットエラー:', error);
     alert('リセットに失敗しました: ' + error.message);
