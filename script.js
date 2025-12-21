@@ -206,12 +206,6 @@ function submitNickname(){
     return;
   }
 
-  // 編集モードで名前が変更された場合、合格証をリセット
-  if (isEditingNickname && input !== nickname) {
-    clearCertificatesFromStorage();
-    isEditingNickname = false;
-  }
-
   nickname = input;
 
   // ローカルストレージに保存
@@ -240,9 +234,43 @@ function submitNickname(){
   }, 300);
 }
 
-// ローカルストレージから合格証データを削除
-function clearCertificatesFromStorage() {
-  localStorage.removeItem(STORAGE_KEY_CERTIFICATES);
+// 合格証メタデータをlocalStorageに保存
+function saveCertificateMetadata(mapKey, nickname, date) {
+  try {
+    const metadata = {
+      nickname: nickname,
+      date: date,
+      timestamp: new Date().getTime()
+    };
+    localStorage.setItem(mapKey, JSON.stringify(metadata)); // Keyはそのまま
+    console.log('合格証メタデータを保存しました。Key: ' + mapKey);
+  } catch (error) {
+    console.error('メタデータ保存エラー:', error);
+  }
+}
+
+// 合格証メタデータを取得
+function getCertificateMetadata(mapKey) {
+  try {
+    const data = localStorage.getItem(mapKey);
+    if (!data) return null;
+    
+    // JSONとしてパースできるか試す（メタデータ形式）
+    try {
+      const parsed = JSON.parse(data);
+      // nicknameとdateがあればメタデータ形式
+      if (parsed.nickname && parsed.date) {
+        return parsed;
+      }
+    } catch (e) {
+      // パースできない = 古い画像データ形式
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('メタデータ取得エラー:', error);
+    return null;
+  }
 }
 
 // ジャンルと難易度を指定して開始
@@ -821,22 +849,9 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
     width: 800,
     height: 565
   }).then(canvas => {
-    // canvasをBase64形式に変換（WebP形式で圧縮して軽量化）
     const imageDataBase64 = canvas.toDataURL('image/webp', 0.8);
-
-    // localStorageに保存
-    const storageKey = mapKey;
-    try {
-      localStorage.setItem(storageKey, imageDataBase64);
-      console.log('合格証画像をlocalStorageに保存しました。Key: ' + storageKey);
-    } catch(error) {
-      console.error('localStorage保存エラー:', error);
-      alert('合格証の保存に失敗しました。ブラウザのストレージ容量を確認してください。');
-    }
-
-    // 保存完了後に合格証画面を表示
-    showCertificateScreen(levelName, imageDataBase64);
-    
+    saveCertificateMetadata(mapKey, nickname, dateStr);
+    showCertificateScreen(levelName, imageDataBase64);    
   }).catch(error => {
     console.error('html2canvasエラー:', error);
     alert('合格証の生成に失敗しました。');
@@ -888,11 +903,11 @@ function openCertificateInNewWindow(){
 
 // 難易度の解放状態を判定
 function isDifficultyUnlocked(genreName, levelIndex) {
-  if (levelIndex === 0) return true; // 初級は常に解放
+  if (levelIndex === 0) return true;
 
   const genreNumber = getGenreNumber(genreName);
   const storageKey = genreNumber + '-' + levelIndex;
-  return localStorage.getItem(storageKey) !== null;
+  return getCertificateMetadata(storageKey) !== null;
 }
 
 // ジャンルボタンを動的に生成（難易度選択システム）
@@ -944,9 +959,9 @@ function initializeGenreButtons() {
       // 合格証バッジ（メダル）
       const genreNumber = getGenreNumber(genreName);
       const storageKey = genreNumber + '-' + (levelIndex + 1);
-      const certificateData = localStorage.getItem(storageKey);
+      const certificateMetadata = getCertificateMetadata(storageKey);
 
-      if (certificateData) {
+      if (certificateMetadata) {
         const badgeMedal = document.createElement('span');
         badgeMedal.className = 'certificate-medal';
         badgeMedal.title = levelName + '合格証を表示';
@@ -991,9 +1006,9 @@ function initializeGenreButtons() {
 
     // 超級の合格証バッジ
     const ultraCertKey = genreNumber + '-4';
-    const ultraCertData = localStorage.getItem(ultraCertKey);
+    const ultraCertMetadata = getCertificateMetadata(ultraCertKey);
 
-    if (ultraCertData) {
+    if (ultraCertMetadata) {
       const badgeMedal = document.createElement('span');
       badgeMedal.className = 'certificate-medal';
       badgeMedal.title = '超級合格証を表示';
@@ -1035,9 +1050,9 @@ function initializeGenreButtons() {
 
     // エクストラステージの合格証バッジ
     const extraCertKey = 'ALL';
-    const extraCertData = localStorage.getItem(extraCertKey);
+    const extraCertMetadata = getCertificateMetadata(extraCertKey);
 
-    if (extraCertData) {
+    if (extraCertMetadata) {
       const badgeMedal = document.createElement('span');
       badgeMedal.className = 'certificate-medal extra-medal';
       badgeMedal.title = 'エクストラステージ合格証を表示';
@@ -1752,28 +1767,89 @@ function getYouTubeThumbnail(videoId) {
  * @param {string} key - localStorageのキー（例: "ジャンル1_初級"）
  */
 function openCertificateModal(key) {
-  // localStorageから合格証画像データを取得
-  const certificateData = localStorage.getItem(key);
+  const metadata = getCertificateMetadata(key);
 
-  if (!certificateData) {
+  if (!metadata) {
+    alert('合格証データが見つかりません');
     return;
   }
 
-  // モーダル要素を取得
-  const modal = document.getElementById('certificateModal');
-  const modalImage = document.getElementById('certificateModalImage');
-  const downloadLink = document.getElementById('certificateModalDownload');
+  const { nickname: savedNickname, date } = metadata;
+  
+  // Keyからジャンル・レベル情報を復元
+  let genreName, levelIndex, levelName;
+  
+  if (key === 'ALL') {
+    genreName = 'エクストラステージ';
+    levelIndex = null;
+    levelName = '合格';
+  } else {
+    const parts = key.split('-');
+    const genreNumber = parseInt(parts[0]);
+    levelIndex = parseInt(parts[1]) - 1;
+    
+    genreName = GENRE_NAMES[genreNumber - 1];
+    
+    if (levelIndex === 3) {
+      levelName = '超級';
+    } else {
+      levelName = levels[levelIndex];
+    }
+  }
 
-  // 画像とダウンロードリンクを設定
-  modalImage.src = certificateData;
-  downloadLink.href = certificateData;
+  const imageUrl = CERTIFICATE_BG_IMAGE_MAP[key];
+  
+  if (!imageUrl) {
+    alert('合格証の背景画像が見つかりません');
+    return;
+  }
 
-  // ファイル名を設定
-  const filename = key + '_合格証.jpg';
-  downloadLink.download = filename;
+  const certificateTextHtml =
+    '<div class="certificate-nickname">' + savedNickname + '殿</div>' +
+    '<div class="certificate-date">' + date + '</div>';
 
-  // モーダルを表示
-  modal.style.display = 'flex';
+  document.getElementById('captureImage').src = imageUrl;
+  document.getElementById('captureText').innerHTML = certificateTextHtml;
+
+  const captureImg = document.getElementById('captureImage');
+  
+  const generateImage = function() {
+    setTimeout(() => {
+      const captureArea = document.getElementById('captureArea');
+      
+      html2canvas(captureArea, {
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        scale: 2,
+        width: 800,
+        height: 565
+      }).then(canvas => {
+        const imageDataBase64 = canvas.toDataURL('image/webp', 0.8);
+        
+        const modal = document.getElementById('certificateModal');
+        const modalImage = document.getElementById('certificateModalImage');
+        const downloadLink = document.getElementById('certificateModalDownload');
+
+        modalImage.src = imageDataBase64;
+        downloadLink.href = imageDataBase64;
+
+        const filename = genreName + '_' + levelName + '_合格証.webp';
+        downloadLink.download = filename;
+
+        modal.style.display = 'flex';
+      }).catch(error => {
+        console.error('合格証生成エラー:', error);
+        alert('合格証の生成に失敗しました');
+      });
+    }, 100);
+  };
+
+  captureImg.onload = generateImage;
+  
+  if (captureImg.complete) {
+    generateImage();
+  }
 }
 
 /**
