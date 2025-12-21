@@ -821,8 +821,8 @@ function generateAndSaveCertificate(levelName, dateStr, imageUrl, certificateTex
     width: 800,
     height: 565
   }).then(canvas => {
-    // canvasをBase64形式に変換（JPEG形式で圧縮して軽量化）
-    const imageDataBase64 = canvas.toDataURL('image/jpeg', 0.8);
+    // canvasをBase64形式に変換（WebP形式で圧縮して軽量化）
+    const imageDataBase64 = canvas.toDataURL('image/webp', 0.8);
 
     // localStorageに保存
     const storageKey = mapKey;
@@ -876,7 +876,7 @@ function downloadCertificate(){
   const img = document.getElementById('certificateDisplayImage');
   const link = document.createElement('a');
   link.href = img.src;
-  link.download = currentGenre + '_' + levels[currentLevelIndex] + '_合格証.jpg';
+  link.download = currentGenre + '_' + levels[currentLevelIndex] + '_合格証.webp';
   link.click();
 }
 
@@ -1568,9 +1568,6 @@ function sendScoreToServer(score, totalQuestions, buttonElement) {
   const browserId = getBrowserId();
   const genre = 'エクストラステージ';
 
-  // スコアを100点満点に変換
-  const scorePercent = Math.round((score / totalQuestions) * 100);
-
   // ボタンを無効化して送信中表示
   if (buttonElement) {
     buttonElement.disabled = true;
@@ -1609,7 +1606,8 @@ function sendScoreToServer(score, totalQuestions, buttonElement) {
     .saveScore({
       browserId: browserId,
       nickname: nickname,
-      score: scorePercent,
+      score: score,
+      totalQuestions: totalQuestions,
       genre: genre
     });
 }
@@ -1682,7 +1680,7 @@ function displayRanking(hallOfFame, rankings) {
       html += '<div class="ranking-item hall-of-fame-item ' + currentUserClass + '">';
       html += '<div class="ranking-rank">👑</div>';
       html += '<div class="ranking-nickname">' + item.nickname + '</div>';
-      html += '<div class="ranking-score">' + item.score + '点</div>';
+      html += '<div class="ranking-score">' + item.score + '問正解</div>';
       html += '<div class="ranking-timestamp">' + item.timestamp + '</div>';
       html += '</div>';
     });
@@ -1705,7 +1703,7 @@ function displayRanking(hallOfFame, rankings) {
       html += '<div class="ranking-item ' + rankClass + ' ' + currentUserClass + '">';
       html += '<div class="ranking-rank">' + medal + item.rank + '</div>';
       html += '<div class="ranking-nickname">' + item.nickname + '</div>';
-      html += '<div class="ranking-score">' + item.score + '点</div>';
+      html += '<div class="ranking-score">' + item.score + '問正解</div>';
       html += '</div>';
     });
 
@@ -1771,7 +1769,7 @@ function openCertificateModal(key) {
   downloadLink.href = certificateData;
 
   // ファイル名を設定
-  const filename = key + '_合格証.webp';
+  const filename = key + '_合格証.jpg';
   downloadLink.download = filename;
 
   // モーダルを表示

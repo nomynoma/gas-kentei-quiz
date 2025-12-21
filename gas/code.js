@@ -896,23 +896,28 @@ function generateAnswerHash(answer) {
  * @param {Object} payload
  * @param {string} payload.browserId - ブラウザ識別ID
  * @param {string} payload.nickname - ニックネーム
- * @param {number} payload.score - スコア
+ * @param {number} payload.score - 正解数
+ * @param {number} payload.totalQuestions - 総問題数
  * @param {string} payload.genre - ジャンル名（"エクストラステージ"など）
- * @returns {Object} { success: true, rank: number } または { success: false, error: string }
+ * @returns {Object} { success: true, rank: number, isHallOfFame: boolean } または { success: false, error: string }
  */
 function saveScore(payload) {
   try {
     var browserId = payload.browserId;
     var nickname = payload.nickname;
     var score = payload.score;
+    var totalQuestions = payload.totalQuestions;
     var genre = payload.genre || 'エクストラステージ';
 
-    if (!browserId || !nickname || score === undefined) {
+    if (!browserId || !nickname || score === undefined || totalQuestions === undefined) {
       return {
         success: false,
         error: '必須パラメータが不足しています'
       };
     }
+
+    // 全問正解かどうかを判定
+    var isPerfectScore = (score === totalQuestions);
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheetName = 'スコアランキング';
@@ -922,8 +927,8 @@ function saveScore(payload) {
     if (!sheet) {
       sheet = ss.insertSheet(sheetName);
       // ヘッダー行を追加
-      sheet.appendRow(['browserId', 'nickname', 'score', 'timestamp', 'genre']);
-      sheet.getRange('A1:E1').setFontWeight('bold');
+      sheet.appendRow(['browserId', 'nickname', 'score', 'timestamp', 'genre', 'isPerfect']);
+      sheet.getRange('A1:F1').setFontWeight('bold');
       sheet.setFrozenRows(1);
     }
 
@@ -947,10 +952,11 @@ function saveScore(payload) {
         sheet.getRange(rowIndex, 2).setValue(nickname);
         sheet.getRange(rowIndex, 3).setValue(score);
         sheet.getRange(rowIndex, 4).setValue(timestamp);
+        sheet.getRange(rowIndex, 6).setValue(isPerfectScore);
       }
     } else {
       // 新規レコードを追加
-      sheet.appendRow([browserId, nickname, score, timestamp, genre]);
+      sheet.appendRow([browserId, nickname, score, timestamp, genre, isPerfectScore]);
     }
 
     // ランキングを取得して順位を返す
@@ -958,11 +964,11 @@ function saveScore(payload) {
     var rank = -1;
     var isHallOfFame = false;
 
-    // 100点の場合は殿堂入り
-    if (score === 100) {
+    // 全問正解の場合は殿堂入り
+    if (isPerfectScore) {
       isHallOfFame = true;
     } else {
-      // 100点未満の場合は挑戦者ランキングから順位を取得
+      // 全問正解未満の場合は挑戦者ランキングから順位を取得
       for (var i = 0; i < rankingData.rankings.length; i++) {
         if (rankingData.rankings[i].browserId === browserId) {
           rank = i + 1;
@@ -1011,8 +1017,8 @@ function getTopScores(payload) {
     }
 
     var data = sheet.getDataRange().getValues();
-    var perfectScores = [];  // 100点（全問正解者）
-    var challengerScores = [];  // 100点未満（挑戦者）
+    var perfectScores = [];  // 全問正解者
+    var challengerScores = [];  // 全問正解未満（挑戦者）
 
     // ヘッダー行をスキップして、指定ジャンルのデータを抽出
     for (var i = 1; i < data.length; i++) {
@@ -1021,11 +1027,12 @@ function getTopScores(payload) {
           browserId: data[i][0],
           nickname: data[i][1],
           score: data[i][2],
-          timestamp: data[i][3]
+          timestamp: data[i][3],
+          isPerfect: data[i][5] || false  // F列のisPerfectフラグ
         };
 
-        // 100点かどうかで振り分け
-        if (scoreData.score === 100) {
+        // isPerfectフラグで振り分け
+        if (scoreData.isPerfect === true) {
           perfectScores.push(scoreData);
         } else {
           challengerScores.push(scoreData);
