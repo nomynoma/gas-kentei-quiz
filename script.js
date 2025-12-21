@@ -242,7 +242,8 @@ function saveCertificateMetadata(mapKey, nickname, date) {
       date: date,
       timestamp: new Date().getTime()
     };
-    localStorage.setItem(mapKey, JSON.stringify(metadata)); // Keyはそのまま
+    const encoded = btoa(JSON.stringify(metadata)); // Base64エンコード
+    localStorage.setItem(mapKey, encoded);
     console.log('合格証メタデータを保存しました。Key: ' + mapKey);
   } catch (error) {
     console.error('メタデータ保存エラー:', error);
@@ -255,15 +256,15 @@ function getCertificateMetadata(mapKey) {
     const data = localStorage.getItem(mapKey);
     if (!data) return null;
     
-    // JSONとしてパースできるか試す（メタデータ形式）
     try {
-      const parsed = JSON.parse(data);
-      // nicknameとdateがあればメタデータ形式
+      // Base64デコードを試みる
+      const decoded = atob(data);
+      const parsed = JSON.parse(decoded);
       if (parsed.nickname && parsed.date) {
         return parsed;
       }
     } catch (e) {
-      // パースできない = 古い画像データ形式
+      // デコード失敗 = 古い形式または不正なデータ
     }
     
     return null;
