@@ -164,7 +164,7 @@ function saveNicknameToStorage(name) {
 function updateNicknameDisplay() {
   const nicknameTextEl = document.getElementById('nicknameText');
   if (nicknameTextEl && nickname) {
-    nicknameTextEl.textContent = `回答者：${nickname}`;
+    nicknameTextEl.textContent = `${nickname}`;
   }
 }
 
